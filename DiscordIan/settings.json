@@ -1,7 +1,9 @@
 {
   "IanCatFactEndpoint": "https://catfact.ninja/fact/",
   "IanCommandChar": "!",
+  "IanGeocodioEndpoint": "https://api.geocod.io/v1.4/geocode?limit=1&api_key={0}&q={1}",
   "IanUrbanDictionaryEndpoint": "http://api.urbandictionary.com/v0/define?term={0}",
+  "IanWeatherGovPointsEndpoint": "https://api.weather.gov/points/{0}",
   "Serilog": {
     "WriteTo": [
       {
