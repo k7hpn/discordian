@@ -1,0 +1,15 @@
+{
+  "IanCatFactEndpoint": "https://catfact.ninja/fact/",
+  "IanCommandChar": "!",
+  "IanUrbanDictionaryEndpoint": "http://api.urbandictionary.com/v0/define?term={0}",
+  "Serilog": {
+    "WriteTo": [
+      {
+        "Name": "Console",
+        "Args": {
+          "theme": "Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme::Code, Serilog.Sinks.Console"
+        }
+      }
+    ]
+  }
+}

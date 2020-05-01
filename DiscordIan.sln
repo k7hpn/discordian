@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29926.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordIan", "DiscordIan\DiscordIan.csproj", "{66083A30-2274-4E81-A5A3-1BB46F692B66}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A8070180-86F9-47CA-B3D3-A953C2FFA1C9}"
+	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		Code.ruleset = Code.ruleset
+		docker-build.bash = docker-build.bash
+		Dockerfile = Dockerfile
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{66083A30-2274-4E81-A5A3-1BB46F692B66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66083A30-2274-4E81-A5A3-1BB46F692B66}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66083A30-2274-4E81-A5A3-1BB46F692B66}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66083A30-2274-4E81-A5A3-1BB46F692B66}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {04181E35-D9E5-480E-AEEF-19960DACD291}
+	EndGlobalSection
+EndGlobal
