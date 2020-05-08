@@ -1,20 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
-using System.Text.Json;
+using System.Runtime.Serialization;
+using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Serialization;
 using DiscordIan.Model;
 using Microsoft.Extensions.Logging;
 
 namespace DiscordIan.Service
 {
-    public class FetchJsonService
+    public class FetchXMLService
     {
-        private readonly ILogger<FetchJsonService> _logger;
+        private readonly ILogger<FetchXMLService> _logger;
         private readonly HttpClient _httpClient;
 
-        public FetchJsonService(ILogger<FetchJsonService> logger,
+        public FetchXMLService(ILogger<FetchXMLService> logger,
             HttpClient httpClient)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -39,20 +43,16 @@ namespace DiscordIan.Service
                 var httpResult = await _httpClient.GetAsync(requestUri);
                 if (!httpResult.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("FetchJson failed with HTTP status {HttpStats} on request {RequestURI}",
+                    _logger.LogWarning("FetchXML failed with HTTP status {HttpStats} on request {RequestURI}",
                         httpResult.StatusCode,
                         requestUri);
                     response.IsSuccessful = false;
                     response.Elapsed = stopwatch.Elapsed;
                     response.Message = $"HTTP status code {httpResult.StatusCode}";
                 }
-
-                response.Data = await JsonSerializer.DeserializeAsync<T>(
-                    await httpResult.Content.ReadAsStreamAsync(),
-                        new JsonSerializerOptions
-                        {
-                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                        });
+                
+                response.Data = await DeserializeObjectAsync<T>(
+                    await httpResult.Content.ReadAsStringAsync());
                 response.IsSuccessful = true;
                 response.Elapsed = stopwatch.Elapsed;
                 return response;
@@ -68,5 +68,18 @@ namespace DiscordIan.Service
                 return response;
             }
         }
+
+        public async Task<T> DeserializeObjectAsync<T>(string xml)
+        {
+            using (TextReader reader = new StringReader(xml))
+            {
+                XmlSerializer xmlSerializer =
+                    new XmlSerializer(typeof(T));
+                T xmlData = (T)xmlSerializer.Deserialize(reader);
+
+                return xmlData;
+            }
+        }
+        
     }
 }

@@ -108,6 +108,7 @@ namespace DiscordIan
             // project services
             services.AddSingleton<CommandHandlingService>();
             services.AddTransient<FetchJsonService>();
+            services.AddTransient<FetchXMLService>();
 
             // system services
             services.AddTransient<System.Net.Http.HttpClient>();
