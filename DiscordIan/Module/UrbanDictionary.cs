@@ -19,16 +19,16 @@ namespace DiscordIan.Module
         private const string NotConfigured = "Please configure Urban Dictionary before using it.";
 
         private readonly IDistributedCache _cache;
-        private readonly FetchJsonService _fetchJsonService;
+        private readonly FetchService _fetchService;
         private readonly Model.Options _options;
 
         public UrbanDictionary(IDistributedCache cache,
-            FetchJsonService fetchJsonService,
+            FetchService fetchService,
             IOptionsMonitor<Model.Options> optionsAccessor)
         {
             _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-            _fetchJsonService = fetchJsonService
-                ?? throw new ArgumentNullException(nameof(fetchJsonService));
+            _fetchService = fetchService
+                ?? throw new ArgumentNullException(nameof(fetchService));
             _options = optionsAccessor.CurrentValue
                 ?? throw new ArgumentNullException(nameof(optionsAccessor));
         }
@@ -77,7 +77,7 @@ namespace DiscordIan.Module
             {
                 var uri = new Uri(string.Format(_options.IanUrbanDictionaryEndpoint,
                     HttpUtility.UrlEncode(term)));
-                var response = await _fetchJsonService.GetAsync<UrbanResponse>(uri);
+                var response = await _fetchService.GetAsync<UrbanResponse>(uri);
 
                 if (response?.IsSuccessful == true)
                 {
