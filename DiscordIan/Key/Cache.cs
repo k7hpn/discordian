@@ -2,7 +2,6 @@
 {
     public struct Cache
     {
-        public static readonly string Geocode = "gc.{0}";
         public static readonly string UrbanDictionary = "ud.{0}";
     }
 }

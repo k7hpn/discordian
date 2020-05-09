@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Discord.Commands;
+using DiscordIan.Model.MapQuest;
 using DiscordIan.Model.OpenWeatherMap;
 using DiscordIan.Service;
 using Microsoft.Extensions.Caching.Distributed;
@@ -19,22 +20,16 @@ namespace DiscordIan.Module
     public class OpenWeather : BaseModule
     {
         private readonly IDistributedCache _cache;
-        private readonly FetchJsonService _fetchJsonService;
-        private readonly FetchXMLService _fetchXMLService;
+        private readonly FetchService _fetchService;
         private readonly Model.Options _options;
-        private const string Current = "weather";
-        private const string Forecast = "forecast";
 
         public OpenWeather(IDistributedCache cache,
-            FetchJsonService fetchJsonService,
-            FetchXMLService fetchXMLService,
+            FetchService fetchService,
             IOptionsMonitor<Model.Options> optionsAccessor)
         {
             _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-            _fetchJsonService = fetchJsonService
-                ?? throw new ArgumentNullException(nameof(fetchJsonService));
-            _fetchXMLService = fetchXMLService
-                ?? throw new ArgumentNullException(nameof(fetchXMLService));
+            _fetchService = fetchService
+                ?? throw new ArgumentNullException(nameof(fetchService));
             _options = optionsAccessor.CurrentValue
                 ?? throw new ArgumentNullException(nameof(optionsAccessor));
         }
@@ -46,31 +41,31 @@ namespace DiscordIan.Module
             [Summary("The address or location for current weather conditions")] string location)
         {
             string coords = await _cache.GetStringAsync(location);
-            string locale = coords == null ? null : await _cache.GetStringAsync(coords);
+            string locale = null;
+            if (!String.IsNullOrEmpty(coords))
+                locale = await _cache.GetStringAsync(coords);
 
-            if (string.IsNullOrEmpty(coords) && string.IsNullOrEmpty(location))
+            if (String.IsNullOrEmpty(coords) && String.IsNullOrEmpty(location))
             {
                 await ReplyAsync("Please provide a location.");
                 return;
             }
-            Model.Geocodio.Location coordinates = null;
-            Model.Geocodio.AddressComponents address = null;
-            if (coords == null || locale == null)
+
+            if (String.IsNullOrEmpty(coords) || String.IsNullOrEmpty(locale))
             {
                 try
                 {
-                    (coordinates, address) = await GeocodeAddressAsync(location);
+                    (coords, locale) = await GeocodeAddressAsync(location);
 
-                    if (coordinates != null && address != null)
+                    if (!String.IsNullOrEmpty(coords) && !String.IsNullOrEmpty(locale))
                     {
-                        locale = address.City + ", " + address.State;
-                        string latlong = String.Format("{0},{1}", coordinates.Lat.ToString(), coordinates.Lng.ToString());
+                        await _cache.SetStringAsync(location, coords,
+                            new DistributedCacheEntryOptions { 
+                                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4) });
 
-                        await _cache.SetStringAsync(location, latlong,
-                            new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4) });
-
-                        await _cache.SetStringAsync(latlong, locale,
-                            new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4) });
+                        await _cache.SetStringAsync(coords, locale,
+                            new DistributedCacheEntryOptions { 
+                                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4) });
                     }
                 }
                 catch (Exception ex)
@@ -78,21 +73,17 @@ namespace DiscordIan.Module
                     //Geocode failed, revert to OpenWeatherMap's built-in resolve.
                 }
             }
-            else
-            {
-                coordinates = new Model.Geocodio.Location() { Lat = double.Parse(coords.Split(",")[0]), Lng = double.Parse(coords.Split(",")[1]) };
-            }
 
             string message;
             Discord.Embed embed;
 
-            if (coordinates == null || locale == null)
+            if (String.IsNullOrEmpty(coords) || String.IsNullOrEmpty(locale))
                 (message, embed) = await GetWeatherResultAsync(location);
             else
-                (message, embed) = await GetWeatherResultAsync(coordinates, locale);
+                (message, embed) = await GetWeatherResultAsync(coords, locale);
 
 
-            if (message == null)
+            if (String.IsNullOrEmpty(message))
             {
                 await ReplyAsync("No weather found, sorry!");
             }
@@ -103,43 +94,47 @@ namespace DiscordIan.Module
         }
 
         private async Task<(string, Discord.Embed)>
-            GetWeatherResultAsync(Model.Geocodio.Location coordinates, string location)
+            GetWeatherResultAsync(string coordinates, string location)
         {
             var headers = new Dictionary<string, string>
             {
                 { "User-Agent", "DiscorIan Discord bot" }
             };
 
-            var uriCurr = new Uri(string.Format(_options.IanOpenWeatherMapEndpointCoords,
-                HttpUtility.UrlEncode($"{coordinates.Lat}"),
-                HttpUtility.UrlEncode($"{coordinates.Lng}"),
+            var uriCurrent = new Uri(String.Format(_options.IanOpenWeatherMapEndpointCoords,
+                HttpUtility.UrlEncode(coordinates.Split(",")[0]),
+                HttpUtility.UrlEncode(coordinates.Split(",")[1]),
                 _options.IanOpenWeatherKey));
 
-            var uriFore = new Uri(string.Format(_options.IanOpenWeatherMapEndpointForecast,
-                HttpUtility.UrlEncode($"{coordinates.Lat}"),
-                HttpUtility.UrlEncode($"{coordinates.Lng}"),
+            var uriForecast = new Uri(String.Format(_options.IanOpenWeatherMapEndpointForecast,
+                HttpUtility.UrlEncode(coordinates.Split(",")[0]),
+                HttpUtility.UrlEncode(coordinates.Split(",")[1]),
                 _options.IanOpenWeatherKey));
 
-            var responseCurr = await _fetchXMLService
-                .GetAsync<WeatherCurrent.Current>(uriCurr, headers);
+            var responseCurrent = await _fetchService
+                .GetAsync<WeatherCurrent.Current>(uriCurrent, headers);
 
-            if (responseCurr.IsSuccessful)
+            if (responseCurrent.IsSuccessful)
             {
-                string message = string.Empty;
-                var data = responseCurr.Data;
+                string message;
+                var currentData = responseCurrent.Data;
 
-                var responseFore = await _fetchJsonService
-                    .GetAsync<WeatherForecast.Forecast>(uriFore, headers);
+                var responseForecast = await _fetchService
+                    .GetAsync<WeatherForecast.Forecast>(uriForecast, headers);
 
-                if (responseFore.IsSuccessful)
+                if (responseForecast.IsSuccessful)
                 {
-                    var foredata = responseFore.Data;
-                    var today = foredata.Daily[0];
+                    var forecastData = responseForecast.Data;
 
-                    message = FormatResults(data, location, today);
+                    if (forecastData.Daily == null || forecastData.Daily.Length == 0)
+                        throw new Exception("Today doesn't exist?!");
+
+                    var today = forecastData.Daily[0];
+
+                    message = FormatResults(currentData, location, today);
                 }
                 else 
-                    message = FormatResults(data, location);
+                    message = FormatResults(currentData, location);
 
                 return (message, null);
             }
@@ -154,11 +149,11 @@ namespace DiscordIan.Module
                 { "User-Agent", "DiscorIan Discord bot" }
             };
 
-            var uri = new Uri(string.Format(_options.IanOpenWeatherMapEndpointQ,
-                HttpUtility.UrlEncode($"{input}"),
+            var uri = new Uri(String.Format(_options.IanOpenWeatherMapEndpointQ,
+                HttpUtility.UrlEncode(input),
                 _options.IanOpenWeatherKey));
 
-            var response = await _fetchXMLService
+            var response = await _fetchService
                 .GetAsync<WeatherCurrent.Current>(uri, headers);
 
             if (response.IsSuccessful)
@@ -181,29 +176,42 @@ namespace DiscordIan.Module
             return (null, null);
         }
 
-        private async Task<(Model.Geocodio.Location, Model.Geocodio.AddressComponents)> GeocodeAddressAsync(string location)
+        private async Task<(string, string)> GeocodeAddressAsync(string location)
         {
-            Model.Geocodio.Location geocode = null;
-            Model.Geocodio.AddressComponents address = null;
-
-            if (string.IsNullOrEmpty(_options.IanGeocodioEndpoint)
-                || string.IsNullOrEmpty(_options.IanGeocodioKey))
+            if (String.IsNullOrEmpty(_options.IanMapQuestEndpoint)
+                || String.IsNullOrEmpty(_options.IanMapQuestKey))
             {
                 throw new Exception("Geocoding is not configured.");
             }
 
-            var uri = new Uri(string.Format(_options.IanGeocodioEndpoint,
-                _options.IanGeocodioKey,
-                location));
+            var uri = new Uri(String.Format(_options.IanMapQuestEndpoint,
+                HttpUtility.UrlEncode($"{location}"),
+                _options.IanMapQuestKey));
 
-            var response = await _fetchJsonService.GetAsync<Model.Geocodio.Response>(uri);
+            var response = await _fetchService.GetAsync<MapQuest>(uri);
 
             if (response.IsSuccessful)
             {
                 if (response?.Data?.Results != null)
                 {
-                    geocode = response?.Data?.Results[0]?.Location;
-                    address = response?.Data?.Results[0]?.AddressComponents;
+                    var loc = response?.Data?.Results[0]?.Locations[0];
+                    string precision = loc.GeocodeQuality;
+
+                    string geocode = String.Format("{0},{1}", loc.LatLng.Lat.ToString(), loc.LatLng.Lng.ToString());
+                    string locale;
+
+                    if (precision == "COUNTRY")
+                        locale = loc.AdminArea1;
+                    else if (precision == "STATE")
+                        locale = String.Format("{0}, {1}", loc.AdminArea3, loc.AdminArea1);
+                    else if (precision == "CITY" && String.IsNullOrEmpty(loc.AdminArea3))
+                        locale = String.Format("{0}, {1}", loc.AdminArea5, loc.AdminArea1);
+                    else if (String.IsNullOrEmpty(loc.AdminArea5))
+                        locale = String.Format("{0}, {1}", loc.AdminArea3, loc.AdminArea1);
+                    else
+                        locale = String.Format("{0}, {1}", loc.AdminArea5, loc.AdminArea3);
+
+                    return (geocode, locale);
                 }
             }
             else
@@ -211,7 +219,7 @@ namespace DiscordIan.Module
                 throw new Exception(response.Message);
             }
 
-            return (geocode, address);
+            return (null, null);
         }
 
         private string FormatResults(WeatherCurrent.Current data, string location, WeatherForecast.Daily foreData = null)
@@ -236,7 +244,7 @@ namespace DiscordIan.Module
                         data.Wind.Speed.Unit,
                         data.Wind.Direction.Code));
 
-            if (data.Wind.Gusts != "")
+            if (String.IsNullOrEmpty(data.Wind.Gusts))
             {
                 sb.Append(String.Format(" **Gusts:** {0}{1}",
                         data.Wind.Gusts,
@@ -261,14 +269,12 @@ namespace DiscordIan.Module
 
         private string TitleCase(string str)
         {
-            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
-
-            return textInfo.ToTitleCase(str);
+            return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str);
         }
 
         private string WeatherIcon(string iconCode)
         {
-            string result = string.Empty;
+            string result;
 
             switch (iconCode)
             {
@@ -308,7 +314,9 @@ namespace DiscordIan.Module
                 case "50n":
                     result = ":sweat_drops:";
                     break;
-
+                default:
+                    result = string.Empty;
+                    break;
             }
             
             return result;    

@@ -10,8 +10,8 @@
         public string IanOpenWeatherMapEndpointCoords { get; set; }
         public string IanOpenWeatherMapEndpointQ { get; set; }
         public string IanOpenWeatherMapEndpointForecast { get; set; }
-        public string IanGeocodioEndpoint { get; set; }
         public string IanOpenWeatherKey { get; set; }
-        public string IanGeocodioKey { get; set; }
+        public string IanMapQuestKey { get; set; }
+        public string IanMapQuestEndpoint{ get; set; }
     }
 }

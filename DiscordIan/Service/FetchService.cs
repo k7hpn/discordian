@@ -3,22 +3,22 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.Runtime.Serialization;
-using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Serialization;
 using DiscordIan.Model;
 using Microsoft.Extensions.Logging;
 
 namespace DiscordIan.Service
 {
-    public class FetchXMLService
+    public class FetchService
     {
-        private readonly ILogger<FetchXMLService> _logger;
+        private readonly ILogger<FetchService> _logger;
         private readonly HttpClient _httpClient;
+        private const string json = "application/json";
+        private const string xml = "application/xml";
 
-        public FetchXMLService(ILogger<FetchXMLService> logger,
+        public FetchService(ILogger<FetchService> logger,
             HttpClient httpClient)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -43,23 +43,23 @@ namespace DiscordIan.Service
                 var httpResult = await _httpClient.GetAsync(requestUri);
                 if (!httpResult.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("FetchXML failed with HTTP status {HttpStats} on request {RequestURI}",
+                    _logger.LogWarning("Fetch failed with HTTP status {HttpStats} on request {RequestURI}",
                         httpResult.StatusCode,
                         requestUri);
                     response.IsSuccessful = false;
                     response.Elapsed = stopwatch.Elapsed;
                     response.Message = $"HTTP status code {httpResult.StatusCode}";
                 }
-                
+
                 response.Data = await DeserializeObjectAsync<T>(
-                    await httpResult.Content.ReadAsStringAsync());
+                    httpResult.Content);
                 response.IsSuccessful = true;
                 response.Elapsed = stopwatch.Elapsed;
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "FetchJson errored trying to fetch {RequestURI}: {ErrorMessage}",
+                _logger.LogError(ex, "Fetch errored trying to fetch {RequestURI}: {ErrorMessage}",
                     requestUri,
                     ex.Message);
                 response.IsSuccessful = false;
@@ -69,17 +69,34 @@ namespace DiscordIan.Service
             }
         }
 
-        public async Task<T> DeserializeObjectAsync<T>(string xml)
+        public async Task<T> DeserializeObjectAsync<T>(HttpContent content) where T : class
         {
-            using (TextReader reader = new StringReader(xml))
+            if (content?.Headers?.ContentType?.MediaType == json)
             {
-                XmlSerializer xmlSerializer =
-                    new XmlSerializer(typeof(T));
-                T xmlData = (T)xmlSerializer.Deserialize(reader);
-
-                return xmlData;
+                var contentStream = await content.ReadAsStreamAsync();
+                var deserialized = JsonSerializer.DeserializeAsync<T>(
+                    contentStream,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    });
+                return deserialized.Result;
             }
+
+            if (content?.Headers?.ContentType?.MediaType == xml)
+            {
+                var contentString = content.ReadAsStringAsync().Result;
+                using (TextReader reader = new StringReader(contentString))
+                {
+                    XmlSerializer xmlSerializer =
+                        new XmlSerializer(typeof(T));
+                    T xmlData = xmlSerializer.Deserialize(reader) as T;
+
+                    return xmlData;
+                }
+            }
+
+            throw new Exception();
         }
-        
     }
 }
