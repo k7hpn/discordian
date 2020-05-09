@@ -1,10 +1,8 @@
-﻿
-
-namespace DiscordIan.Model.OpenWeatherMap
+﻿namespace DiscordIan.Model.OpenWeatherMap
 {
     public class WeatherForecast
     {
-        public partial class Forecast
+        public class Forecast
         {
             public double Lat { get; set; }
 
@@ -19,7 +17,7 @@ namespace DiscordIan.Model.OpenWeatherMap
             public Daily[] Daily { get; set; }
         }
 
-        public partial class Current
+        public class Current
         {
             public long Dt { get; set; }
 
@@ -50,12 +48,12 @@ namespace DiscordIan.Model.OpenWeatherMap
             public Rain Rain { get; set; }
         }
 
-        public partial class Rain
+        public class Rain
         {
             public double The1H { get; set; }
         }
 
-        public partial class Weather
+        public class Weather
         {
             public long Id { get; set; }
 
@@ -66,7 +64,7 @@ namespace DiscordIan.Model.OpenWeatherMap
             public string Icon { get; set; }
         }
 
-        public partial class Daily
+        public class Daily
         {
             public long Dt { get; set; }
 
@@ -97,7 +95,7 @@ namespace DiscordIan.Model.OpenWeatherMap
             public double? Rain { get; set; }
         }
 
-        public partial class FeelsLike
+        public class FeelsLike
         {
             public double Day { get; set; }
 
@@ -108,7 +106,7 @@ namespace DiscordIan.Model.OpenWeatherMap
             public double Morn { get; set; }
         }
 
-        public partial class Temp
+        public class Temp
         {
             public double Day { get; set; }
 

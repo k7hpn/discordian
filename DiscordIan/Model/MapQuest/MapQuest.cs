@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 
-using System.Globalization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-
-    namespace DiscordIan.Model.MapQuest
+namespace DiscordIan.Model.MapQuest
 {
-    public partial class MapQuest
+    public class MapQuest
     {
         public Info Info { get; set; }
 
@@ -16,7 +11,7 @@ using Newtonsoft.Json.Converters;
         public Result[] Results { get; set; }
     }
 
-    public partial class Info
+    public class Info
     {
         public long Statuscode { get; set; }
 
@@ -25,32 +20,32 @@ using Newtonsoft.Json.Converters;
         public object[] Messages { get; set; }
     }
 
-    public partial class Copyright
+    public class Copyright
     {
         public string Text { get; set; }
 
         public Uri ImageUrl { get; set; }
-        
+
         public string ImageAltText { get; set; }
     }
 
-    public partial class Options
+    public class Options
     {
         public long MaxResults { get; set; }
 
         public bool ThumbMaps { get; set; }
-        
+
         public bool IgnoreLatLngInput { get; set; }
     }
 
-    public partial class Result
+    public class Result
     {
         public ProvidedLocation ProvidedLocation { get; set; }
 
         public Location[] Locations { get; set; }
     }
 
-    public partial class Location
+    public class Location
     {
         public string Street { get; set; }
 
@@ -95,14 +90,14 @@ using Newtonsoft.Json.Converters;
         public LatLng DisplayLatLng { get; set; }
     }
 
-    public partial class LatLng
+    public class LatLng
     {
         public double Lat { get; set; }
 
         public double Lng { get; set; }
     }
 
-    public partial class ProvidedLocation
+    public class ProvidedLocation
     {
         public string Location { get; set; }
     }

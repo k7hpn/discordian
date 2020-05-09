@@ -13,10 +13,11 @@ namespace DiscordIan.Service
 {
     public class FetchService
     {
-        private readonly ILogger<FetchService> _logger;
-        private readonly HttpClient _httpClient;
         private const string json = "application/json";
         private const string xml = "application/xml";
+
+        private readonly ILogger<FetchService> _logger;
+        private readonly HttpClient _httpClient;
 
         public FetchService(ILogger<FetchService> logger,
             HttpClient httpClient)
@@ -86,17 +87,12 @@ namespace DiscordIan.Service
             if (content?.Headers?.ContentType?.MediaType == xml)
             {
                 var contentString = content.ReadAsStringAsync().Result;
-                using (TextReader reader = new StringReader(contentString))
-                {
-                    XmlSerializer xmlSerializer =
-                        new XmlSerializer(typeof(T));
-                    T xmlData = xmlSerializer.Deserialize(reader) as T;
-
-                    return xmlData;
-                }
+                using TextReader reader = new StringReader(contentString);
+                var xmlSerializer = new XmlSerializer(typeof(T));
+                return xmlSerializer.Deserialize(reader) as T;
             }
 
-            throw new Exception();
+            throw new Exception($"Unknown response type: {content?.Headers?.ContentType?.MediaType}");
         }
     }
 }
