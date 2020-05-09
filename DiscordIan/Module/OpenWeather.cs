@@ -163,10 +163,12 @@ namespace DiscordIan.Module
                 string latlong = String.Format("{0},{1}", data.City.Coord.Lat, data.City.Coord.Lon);
 
                 await _cache.SetStringAsync(input, latlong,
-                            new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4) });
+                    new DistributedCacheEntryOptions { 
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4) });
 
                 await _cache.SetStringAsync(latlong, locale,
-                    new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4) });
+                    new DistributedCacheEntryOptions { 
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4) });
 
                 string message = FormatResults(data, locale);
 
@@ -244,7 +246,7 @@ namespace DiscordIan.Module
                         data.Wind.Speed.Unit,
                         data.Wind.Direction.Code));
 
-            if (String.IsNullOrEmpty(data.Wind.Gusts))
+            if (!String.IsNullOrEmpty(data.Wind.Gusts))
             {
                 sb.Append(String.Format(" **Gusts:** {0}{1}",
                         data.Wind.Gusts,
