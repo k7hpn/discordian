@@ -273,7 +273,7 @@ namespace DiscordIan.Module
                         data.Wind.Speed.Unit,
                         data.Wind.Direction.Code);
 
-            if (string.IsNullOrEmpty(data.Wind.Gusts))
+            if (!string.IsNullOrEmpty(data.Wind.Gusts))
             {
                 sb.AppendFormat(" **Gusts:** {0}{1}",
                         data.Wind.Gusts,
