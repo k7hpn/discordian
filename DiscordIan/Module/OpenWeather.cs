@@ -160,7 +160,7 @@ namespace DiscordIan.Module
             {
                 var data = response.Data;
                 var locale = String.Format("{0}, {1}", data.City.Name, data.City.Country);
-                string latlong = String.Format("{0},{1}", data.City.Coord.Lat.ToString(), data.City.Coord.Lon.ToString());
+                string latlong = String.Format("{0},{1}", data.City.Coord.Lat, data.City.Coord.Lon);
 
                 await _cache.SetStringAsync(input, latlong,
                             new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4) });
@@ -197,7 +197,7 @@ namespace DiscordIan.Module
                     var loc = response?.Data?.Results[0]?.Locations[0];
                     string precision = loc.GeocodeQuality;
 
-                    string geocode = String.Format("{0},{1}", loc.LatLng.Lat.ToString(), loc.LatLng.Lng.ToString());
+                    string geocode = String.Format("{0},{1}", loc.LatLng.Lat, loc.LatLng.Lng);
                     string locale;
 
                     if (precision == "COUNTRY")
