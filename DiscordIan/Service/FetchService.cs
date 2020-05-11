@@ -79,7 +79,7 @@ namespace DiscordIan.Service
                     contentStream,
                     new JsonSerializerOptions
                     {
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                        PropertyNameCaseInsensitive = true
                     });
                 return deserialized.Result;
             }
