@@ -13,5 +13,8 @@
         public string IanOpenWeatherMapEndpointQ { get; set; }
         public string IanUrbanDictionaryEndpoint { get; set; }
         public string IanUrbanDictionarySwap { get; set; }
+        public string IanOmdbEndpoint { get; set; }
+        public string IanOmdbKey { get; set; }
+        public string IanImdbIdUrl { get; set; }
     }
 }

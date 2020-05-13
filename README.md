@@ -39,9 +39,12 @@ environment variables:
 
 - IanCatFactEndpoint - URL to the cat facts service
 - IanCommandChar - _optional_ - a command character for the bot to respond to in public
+- IanImdbIdUrl - URL to an IMDB movie
 - IanLoginToken - Discord bot token (see _Getting a key_ above)
 - IanMapQuestEndpoint - URL to the MapQuest geocoding service, `{0}` is the location and `{1}` is the API key
 - IanMapQuestKey - A [MapQuest API key](https://developer.mapquest.com)
+- IanOmdbEndpoint - URL to the OMDB API endpoint
+- IanOmdbKey - An [OMDB API key](http://www.omdbapi.com/apikey.aspx)
 - IanOpenWeatherKey - An [OpenWeather API key](https://openweathermap.org/api)
 - IanOpenWeatherMapEndpointCoords - OpenWeather API endpoint to query by coordinates, `{0}` is latitude, `{1}` is longitude, `{2}` is the OpenWeather API key
 - IanOpenWeatherMapEndpointForecast - OpenWeather OneCall API endpoint, `{0}` is latitude, `{1}` is longitude, `{2}` is the OpenWeather API key
@@ -53,3 +56,4 @@ first and second definitions should be swapped
 # License
 
 DiscordIan source code is distributed under The MIT License.
+
