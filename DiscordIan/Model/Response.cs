@@ -2,7 +2,7 @@
 
 namespace DiscordIan.Model
 {
-    public class JsonResponse<T>
+    public class Response<T>
     {
         public bool IsSuccessful { get; set; }
         public string Message { get; set; }

@@ -8,14 +8,14 @@ namespace DiscordIan.Module
 {
     public class CatFact : BaseModule
     {
-        private readonly FetchJsonService _fetchJsonService;
+        private readonly FetchService _fetchService;
         private readonly Model.Options _options;
 
-        public CatFact(FetchJsonService fetchJsonService,
+        public CatFact(FetchService fetchService,
             IOptionsMonitor<Model.Options> optionsAccessor)
         {
-            _fetchJsonService = fetchJsonService
-                ?? throw new ArgumentNullException(nameof(fetchJsonService));
+            _fetchService = fetchService
+                ?? throw new ArgumentNullException(nameof(fetchService));
             _options = optionsAccessor.CurrentValue
                 ?? throw new ArgumentNullException(nameof(optionsAccessor));
         }
@@ -30,7 +30,7 @@ namespace DiscordIan.Module
                 return;
             }
 
-            var catFactResult = await _fetchJsonService
+            var catFactResult = await _fetchService
                 .GetAsync<Model.CatFact>(new Uri(_options.IanCatFactEndpoint));
 
             if (catFactResult.IsSuccessful)
