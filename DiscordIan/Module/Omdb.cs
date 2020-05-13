@@ -61,7 +61,7 @@ namespace DiscordIan.Module
                     });
             }
 
-            if (omdbResponse?.Response == "True")
+            if (omdbResponse?.Response != "True")
             {
                 await ReplyAsync("No result found, sorry!");
             }
