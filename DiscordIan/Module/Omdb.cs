@@ -6,20 +6,20 @@ using System.Threading.Tasks;
 using System.Web;
 using Discord;
 using Discord.Commands;
-using DiscordIan.Model.OMDB;
+using DiscordIan.Model.Omdb;
 using DiscordIan.Service;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 
 namespace DiscordIan.Module
 {
-    public class OMDB : BaseModule
+    public class Omdb : BaseModule
     {
         private readonly IDistributedCache _cache;
         private readonly FetchService _fetchService;
         private readonly Model.Options _options;
 
-        public OMDB(IDistributedCache cache,
+        public Omdb(IDistributedCache cache,
             FetchService fetchService,
             IOptionsMonitor<Model.Options> optionsAccessor)
         {
@@ -31,40 +31,49 @@ namespace DiscordIan.Module
         }
 
         [Command("rt", RunMode = RunMode.Async)]
-        [Summary("Look up movie/tv ratings.")]
+        [Summary("Look up movie/tv ratings")]
         public async Task CurrentAsync([Remainder]
-            [Summary("Name of movie/show.")] string input)
+            [Summary("Name of movie/show")] string input)
         {
-            string cachedResponse = await _cache.GetStringAsync(input);
-            Embed embed;
+            string cachedResponse = await _cache.GetStringAsync(
+                string.Format(Key.Cache.Omdb, input.Trim()));
             Movie omdbResponse;
 
             if (string.IsNullOrEmpty(cachedResponse))
             {
-                omdbResponse = await GetMovieAsync(input);
+                try
+                {
+                    omdbResponse = await GetMovieAsync(input);
+                }
+                catch (Exception ex)
+                {
+                    await ReplyAsync($"Error! {ex.Message}");
+                    return;
+                }
             }
             else
             {
                 omdbResponse = JsonSerializer.Deserialize<Movie>(
                     cachedResponse,
-                    new JsonSerializerOptions { 
-                        PropertyNameCaseInsensitive = true });
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
             }
 
-            if (omdbResponse == null || omdbResponse?.Response == "False")
+            if (omdbResponse?.Response == "True")
             {
                 await ReplyAsync("No result found, sorry!");
             }
             else
             {
-                embed = FormatOmdbResponse(omdbResponse);
-
-                await ReplyAsync(null, false, embed);
+                await ReplyAsync(null,
+                    false,
+                    FormatOmdbResponse(omdbResponse));
             }
         }
 
-        private async Task<Movie>
-            GetMovieAsync(string input)
+        private async Task<Movie> GetMovieAsync(string input)
         {
             var headers = new Dictionary<string, string>
             {
@@ -75,19 +84,20 @@ namespace DiscordIan.Module
                 HttpUtility.UrlEncode(input),
                 _options.IanOmdbKey));
 
-            var response = await _fetchService
-                .GetAsync<Movie>(uri, headers);
+            var response = await _fetchService.GetAsync<Movie>(uri, headers);
 
             if (response.IsSuccessful)
             {
                 var data = response.Data;
 
                 if (data == null)
+                {
                     throw new Exception("Invalid response data.");
+                }
 
                 await _cache.SetStringAsync(
-                    input, 
-                    JsonSerializer.Serialize<Movie>(data),
+                    string.Format(Key.Cache.Omdb, input.Trim()),
+                    JsonSerializer.Serialize(data),
                     new DistributedCacheEntryOptions
                     {
                         AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4)
@@ -117,11 +127,11 @@ namespace DiscordIan.Module
                 }
             }
 
-            EmbedFieldBuilder ratingField = new EmbedFieldBuilder
-                {
-                    Name = "Ratings:",
-                    Value = ratings.ToString().Trim()
-                };
+            var ratingField = new EmbedFieldBuilder
+            {
+                Name = "Ratings:",
+                Value = ratings.ToString().Trim()
+            };
 
             if (!string.IsNullOrEmpty(response.ImdbId))
             {
@@ -129,11 +139,13 @@ namespace DiscordIan.Module
                         response.ImdbId);
             }
 
-            var embed = new EmbedBuilder()
+            return new EmbedBuilder
             {
-                Author = new EmbedAuthorBuilder { 
+                Author = new EmbedAuthorBuilder
+                {
                     Name = response.Title,
-                    Url = titleUrl},
+                    Url = titleUrl
+                },
                 Description = response.Plot,
                 ThumbnailUrl = response.Poster.AbsoluteUri,
                 Fields = new List<EmbedFieldBuilder>()
@@ -148,8 +160,6 @@ namespace DiscordIan.Module
                         { ratingField }
                     }
             }.Build();
-
-            return embed;
         }
     }
 }
