@@ -112,6 +112,7 @@ namespace DiscordIan.Module
         private Embed FormatOmdbResponse(Movie response)
         {
             string titleUrl = string.Empty;
+            string poster = string.Empty;
             var ratings = new StringBuilder("*none*");
 
             if (response.Ratings?.Length > 0)
@@ -139,6 +140,11 @@ namespace DiscordIan.Module
                         response.ImdbId);
             }
 
+            if (response.Poster.IsAbsoluteUri)
+            {
+                poster = response.Poster.AbsoluteUri.ToString();
+            }
+
             return new EmbedBuilder
             {
                 Author = new EmbedAuthorBuilder
@@ -147,19 +153,28 @@ namespace DiscordIan.Module
                     Url = titleUrl
                 },
                 Description = response.Plot,
-                ThumbnailUrl = response.Poster.AbsoluteUri,
+                ThumbnailUrl = poster,
                 Fields = new List<EmbedFieldBuilder>()
                     {
                         { new EmbedFieldBuilder {
                             Name = "Released:",
-                            Value = Convert.ToDateTime(response.Released)
-                                        .ToString("MMMM dd, yyyy")} },
+                            Value = ConvertDateTime(response.Released) } },
                         { new EmbedFieldBuilder {
                             Name = "Actors:",
                             Value = response.Actors } },
                         { ratingField }
                     }
             }.Build();
+        }
+
+        private string ConvertDateTime(string dateString)
+        {
+            if (DateTime.TryParse(dateString, out DateTime date))
+            {
+                return date.ToString("MMMM dd, yyyy");
+            }
+
+            return dateString;
         }
     }
 }
