@@ -15,6 +15,7 @@ namespace DiscordIan.Service
     {
         private const string json = "application/json";
         private const string xml = "application/xml";
+        private const string text = "text/plain";
 
         private readonly ILogger<FetchService> _logger;
         private readonly HttpClient _httpClient;
@@ -90,6 +91,11 @@ namespace DiscordIan.Service
                 using TextReader reader = new StringReader(contentString);
                 var xmlSerializer = new XmlSerializer(typeof(T));
                 return xmlSerializer.Deserialize(reader) as T;
+            }
+
+            if (content?.Headers?.ContentType?.MediaType == text)
+            {
+                throw new Exception($"Unexpected return message: {content.ReadAsStringAsync().Result}");
             }
 
             throw new Exception($"Unknown response type: {content?.Headers?.ContentType?.MediaType}");

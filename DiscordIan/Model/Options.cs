@@ -16,5 +16,8 @@
         public string IanOmdbEndpoint { get; set; }
         public string IanOmdbKey { get; set; }
         public string IanImdbIdUrl { get; set; }
+        public string IanStockKey { get; set; }
+        public string IanStockCompanyEndpoint { get; set; }
+        public string IanStockQuoteEndpoint { get; set; }
     }
 }

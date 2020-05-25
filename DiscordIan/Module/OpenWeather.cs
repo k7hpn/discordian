@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using Discord.Commands;
+using DiscordIan.Helper;
 using DiscordIan.Model.MapQuest;
 using DiscordIan.Model.OpenWeatherMap;
 using DiscordIan.Service;
@@ -249,12 +250,12 @@ namespace DiscordIan.Module
 
         private string FormatResults(WeatherCurrent.Current data,
             string location,
-            WeatherForecast.Daily foreData = null)
+            WeatherForecast.Daily forecastData = null)
         {
             var sb = new StringBuilder()
                     .AppendFormat(">>> **{0}:** {1} {2}",
                         location,
-                        TitleCase(data.Weather.Value),
+                        data.Weather.Value.ToTitleCase(),
                         WeatherIcon(data.Weather.Icon))
                     .AppendLine()
 
@@ -268,7 +269,7 @@ namespace DiscordIan.Module
                     .AppendLine()
 
                     .AppendFormat("**Wind:** {0} **Speed:** {1}{2} {3}",
-                        data.Wind.Speed.Name,
+                        data.Wind.Speed.Name.ToTitleCase(),
                         data.Wind.Speed.Value,
                         data.Wind.Speed.Unit,
                         data.Wind.Direction.Code);
@@ -280,26 +281,21 @@ namespace DiscordIan.Module
                         data.Wind.Speed.Unit);
             }
 
-            if (foreData != null)
+            if (forecastData != null)
             {
                 sb.AppendLine()
                     .AppendFormat("**High:** {0}°{1} **Low:** {2}°{3}",
-                        foreData.Temp.Max.ToString(),
+                        forecastData.Temp.Max.ToString(),
                         data.Temperature.Unit.ToUpper()[0],
-                        foreData.Temp.Min.ToString(),
+                        forecastData.Temp.Min.ToString(),
                         data.Temperature.Unit.ToUpper()[0])
                     .AppendLine()
                     .AppendFormat("**Forecast:** {0} {1}",
-                        TitleCase(foreData.Weather[0].Description),
-                        WeatherIcon(foreData.Weather[0].Icon));
+                        forecastData.Weather[0].Description.ToTitleCase(),
+                        WeatherIcon(forecastData.Weather[0].Icon));
             }
 
             return sb.ToString().Trim();
-        }
-
-        private string TitleCase(string str)
-        {
-            return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str);
         }
 
         private string WeatherIcon(string iconCode)

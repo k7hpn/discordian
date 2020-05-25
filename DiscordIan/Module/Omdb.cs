@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Discord;
 using Discord.Commands;
+using DiscordIan.Helper;
 using DiscordIan.Model.Omdb;
 using DiscordIan.Service;
 using Microsoft.Extensions.Caching.Distributed;
@@ -112,7 +113,6 @@ namespace DiscordIan.Module
         private Embed FormatOmdbResponse(Movie response)
         {
             string titleUrl = string.Empty;
-            string poster = string.Empty;
             var ratings = new StringBuilder("*none*");
 
             if (response.Ratings?.Length > 0)
@@ -128,53 +128,25 @@ namespace DiscordIan.Module
                 }
             }
 
-            var ratingField = new EmbedFieldBuilder
-            {
-                Name = "Ratings:",
-                Value = ratings.ToString().Trim()
-            };
-
             if (!string.IsNullOrEmpty(response.ImdbId))
             {
                 titleUrl = string.Format(_options.IanImdbIdUrl,
                         response.ImdbId);
             }
 
-            if (response.Poster.IsAbsoluteUri)
-            {
-                poster = response.Poster.AbsoluteUri.ToString();
-            }
-
             return new EmbedBuilder
             {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = response.Title,
-                    Url = titleUrl
-                },
+                Author = EmbedFormat.MakeAuthor(response.Title, titleUrl),
                 Description = response.Plot,
-                ThumbnailUrl = poster,
+                ThumbnailUrl = response?.Poster.ValidateUri(),
                 Fields = new List<EmbedFieldBuilder>()
                     {
-                        { new EmbedFieldBuilder {
-                            Name = "Released:",
-                            Value = ConvertDateTime(response.Released) } },
-                        { new EmbedFieldBuilder {
-                            Name = "Actors:",
-                            Value = response.Actors } },
-                        { ratingField }
+                        EmbedFormat.MakeField("Released:", 
+                            DateFormat.ToWesternDate(response.Released)),
+                        EmbedFormat.MakeField("Actors:", response.Actors),
+                        EmbedFormat.MakeField("Ratings:", ratings.ToString().Trim())
                     }
             }.Build();
-        }
-
-        private string ConvertDateTime(string dateString)
-        {
-            if (DateTime.TryParse(dateString, out DateTime date))
-            {
-                return date.ToString("MMMM dd, yyyy");
-            }
-
-            return dateString;
-        }
+        }        
     }
 }

@@ -30,7 +30,7 @@ namespace DiscordIan.Module
                 else
                 {
                     response = message.Substring(MaxReplyLength - 1,
-                        message.Length - (MaxReplyLength - 1 + ForgetIt.Length))
+                        MaxReplyLength - 1 - ForgetIt.Length)
                         + ForgetIt;
                 }
             }

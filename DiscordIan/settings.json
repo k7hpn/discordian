@@ -8,6 +8,8 @@
   "IanUrbanDictionaryEndpoint": "http://api.urbandictionary.com/v0/define?term={0}",
   "IanOmdbEndpoint": "http://www.omdbapi.com/?t={0}&apikey={1}",
   "IanImdbIdUrl": "https://www.imdb.com/title/{0}/",
+  "IanStockCompanyEndpoint": "https://finnhub.io/api/v1/stock/profile2?symbol={0}&token={1}",
+  "IanStockQuoteEndpoint": "https://finnhub.io/api/v1/quote?symbol={0}&token={1}",
   "Serilog": {
     "WriteTo": [
       {
