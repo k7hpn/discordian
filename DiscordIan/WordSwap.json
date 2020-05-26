@@ -1,8 +1,8 @@
 {
-  "WordSwap": [
-    //{
-    //  "inbound": "inword",
-    //  "outbound": "outword"
-    //}
+  "WordSwaps": [
+    {
+      "inbound": "inword",
+      "outbound": "outword"
+    }
   ]
 }

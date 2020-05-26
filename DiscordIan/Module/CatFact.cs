@@ -21,6 +21,7 @@ namespace DiscordIan.Module
         }
 
         [Command("catfact", RunMode = RunMode.Async)]
+        [Alias("cats", "cat")]
         [Summary("Returns an interesting fact about a member of family Felidae")]
         public async Task CatFactAsync()
         {
