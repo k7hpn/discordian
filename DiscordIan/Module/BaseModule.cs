@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using DiscordIan.Helper;
 
 namespace DiscordIan.Module
 {
@@ -35,7 +36,7 @@ namespace DiscordIan.Module
                 }
             }
 
-            return await base.ReplyAsync(response, isTTS, embed, options);
+            return await base.ReplyAsync(response.WordSwap(), isTTS, embed, options);
         }
     }
 }

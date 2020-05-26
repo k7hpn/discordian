@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Globalization;
+using System.IO;
+using System.Text.Json;
+using DiscordIan.Model;
 
 namespace DiscordIan.Helper
 {
@@ -18,6 +21,31 @@ namespace DiscordIan.Helper
             }
 
             return string.Empty;
+        }
+
+        public static string WordSwap(this string str)
+        {
+            var file = "WordSwap.json";
+            if (File.Exists(file))
+            {
+                using (StreamReader r = new StreamReader(file))
+                {
+                    string json = r.ReadToEnd();
+                    var swaps = JsonSerializer.Deserialize<Swaps>(
+                            json,
+                            new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            });
+
+                    foreach (var swap in swaps.WordSwaps)
+                    {
+                        str = str.Replace(swap.inbound, swap.outbound);
+                    }
+                }
+            }
+
+            return str;
         }
     }
 }
