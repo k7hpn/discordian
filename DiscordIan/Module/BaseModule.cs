@@ -36,7 +36,7 @@ namespace DiscordIan.Module
                 }
             }
 
-            return await base.ReplyAsync(response.WordSwap(), isTTS, embed, options);
+            return await base.ReplyAsync(response, isTTS, embed, options);
         }
     }
 }

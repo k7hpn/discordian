@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -58,17 +57,9 @@ namespace DiscordIan.Module
 
                     if (!string.IsNullOrEmpty(coords) && !string.IsNullOrEmpty(locale))
                     {
-                        await _cache.SetStringAsync(location, coords,
-                            new DistributedCacheEntryOptions
-                            {
-                                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4)
-                            });
+                        await _cache.SetStringAsync(location, coords);
 
-                        await _cache.SetStringAsync(coords, locale,
-                            new DistributedCacheEntryOptions
-                            {
-                                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4)
-                            });
+                        await _cache.SetStringAsync(coords, locale);
                     }
                 }
                 catch (Exception)
@@ -95,7 +86,7 @@ namespace DiscordIan.Module
             }
             else
             {
-                await ReplyAsync(message, false, embed);
+                await ReplyAsync(message.WordSwap(_cache), false, embed);
             }
         }
 

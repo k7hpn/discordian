@@ -2,7 +2,9 @@
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
+using DiscordIan.Key;
 using DiscordIan.Model;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace DiscordIan.Helper
 {
@@ -23,31 +25,39 @@ namespace DiscordIan.Helper
             return string.Empty;
         }
 
-        public static string WordSwap(this string str)
+        public static string WordSwap(this string str, IDistributedCache cache)
         {
             if (str == null)
             {
                 return null;
             }
 
-            var file = "WordSwap.json";
-            if (File.Exists(file))
-            {
-                using (StreamReader r = new StreamReader(file))
-                {
-                    string json = r.ReadToEnd();
-                    var swaps = JsonSerializer.Deserialize<Swaps>(
-                            json,
-                            new JsonSerializerOptions
-                            {
-                                PropertyNameCaseInsensitive = true
-                            });
+            var cachedSwaps = cache.GetString(Cache.WordSwap);
 
-                    foreach (var swap in swaps.WordSwaps)
+            if (string.IsNullOrEmpty(cachedSwaps))
+            {
+                cachedSwaps = WordSwapHelper.GetListFromFile();
+
+                if (!string.IsNullOrEmpty(cachedSwaps))
+                {
+                    cache.SetStringAsync(Cache.WordSwap,
+                        cachedSwaps);
+                }
+            }
+
+            if (string.IsNullOrEmpty(cachedSwaps))
+            {
+                return str;
+            }
+
+            var wordSwaps = JsonSerializer.Deserialize<WordSwaps>(cachedSwaps);
+
+            if (wordSwaps != null)
+            {
+                 foreach (var swap in wordSwaps.SwapList)
                     {
                         str = str.Replace(swap.inbound, swap.outbound);
                     }
-                }
             }
 
             return str;

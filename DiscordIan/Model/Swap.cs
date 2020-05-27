@@ -4,12 +4,12 @@ using System.Text;
 
 namespace DiscordIan.Model
 {
-    public class Swaps
+    public class WordSwaps
     {
-        public List<WordSwap> WordSwaps { get; set; }
+        public List<Swap> SwapList { get; set; }
     }
 
-    public class WordSwap
+    public class Swap
     {
         public string inbound { get; set; }
         public string outbound { get; set; }

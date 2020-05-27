@@ -143,21 +143,21 @@ namespace DiscordIan.Module
                 Url = Company?.Weburl.ValidateUri(),
                 ThumbnailUrl = Company?.Logo.ValidateUri(),
                 Fields = new List<EmbedFieldBuilder>() {
-                    EmbedFormat.MakeField("Price:", 
+                    EmbedHelper.MakeField("Price:", 
                         Quote.Current.ToString()),
-                    EmbedFormat.MakeField("Prev Close:", 
+                    EmbedHelper.MakeField("Prev Close:", 
                         Quote.PreviousClose.ToString(), 
                         true),
-                    EmbedFormat.MakeField("Low:", 
+                    EmbedHelper.MakeField("Low:", 
                         Quote.Low.ToString(), 
                         true),
-                    EmbedFormat.MakeField("High:", 
+                    EmbedHelper.MakeField("High:", 
                         Quote.High.ToString(), 
                         true),
-                    EmbedFormat.MakeField("Change:", 
+                    EmbedHelper.MakeField("Change:", 
                         changeString),
-                    EmbedFormat.MakeField("Updated:", 
-                        DateFormat.UnixTimeToDate(Quote.Timestamp))
+                    EmbedHelper.MakeField("Updated:", 
+                        DateHelper.UnixTimeToDate(Quote.Timestamp))
                 }
             }.Build();
         }

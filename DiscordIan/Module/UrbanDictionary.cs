@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordIan.Helper;
 using DiscordIan.Model.UrbanDictionary;
 using DiscordIan.Service;
 using Microsoft.Extensions.Caching.Distributed;
@@ -167,7 +168,7 @@ namespace DiscordIan.Module
                 return;
             }
 
-            await ReplyAsync(await GetDefinition(text));
+            await ReplyAsync((await GetDefinition(text)).ToString().WordSwap(_cache));
         }
 
         [Command("udnext", RunMode = RunMode.Async)]
@@ -180,7 +181,7 @@ namespace DiscordIan.Module
                 return;
             }
 
-            await ReplyAsync(await GetCachedDefinition());
+            await ReplyAsync((await GetCachedDefinition()).ToString().WordSwap(_cache));
         }
 
         [Command("udstat", RunMode = RunMode.Async)]

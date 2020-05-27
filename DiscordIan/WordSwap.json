@@ -1,5 +1,5 @@
 {
-  "WordSwaps": [
+  "SwapList": [
     {
       "inbound": "inword",
       "outbound": "outword"

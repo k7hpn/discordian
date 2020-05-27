@@ -136,15 +136,15 @@ namespace DiscordIan.Module
 
             return new EmbedBuilder
             {
-                Author = EmbedFormat.MakeAuthor(response.Title, titleUrl),
-                Description = response.Plot,
+                Author = EmbedHelper.MakeAuthor(response.Title.WordSwap(_cache), titleUrl),
+                Description = response.Plot.WordSwap(_cache),
                 ThumbnailUrl = response?.Poster.ValidateUri(),
                 Fields = new List<EmbedFieldBuilder>()
                     {
-                        EmbedFormat.MakeField("Released:", 
-                            DateFormat.ToWesternDate(response.Released)),
-                        EmbedFormat.MakeField("Actors:", response.Actors),
-                        EmbedFormat.MakeField("Ratings:", ratings.ToString().Trim())
+                        EmbedHelper.MakeField("Released:", 
+                            DateHelper.ToWesternDate(response.Released)),
+                        EmbedHelper.MakeField("Actors:", response.Actors.WordSwap(_cache)),
+                        EmbedHelper.MakeField("Ratings:", ratings.ToString().Trim())
                     }
             }.Build();
         }        
