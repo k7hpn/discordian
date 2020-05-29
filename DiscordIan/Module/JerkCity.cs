@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -45,11 +46,17 @@ namespace DiscordIan.Module
         [Command("jerk", RunMode = RunMode.Async)]
         [Summary("Returns Jerk City quotes.")]
         public async Task JerkCityAsync([Remainder]
-            [Summary("Search Criteria")] string input)
+            [Summary("Search Criteria")] string input = null)
         {
+            if (string.IsNullOrEmpty(input))
+            {
+                await JerkCityRandom();
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(_options.JerkCityEndpoint))
             {
-                await ReplyAsync("You must configure cat facts to obtain cat facts!");
+                await ReplyAsync("You must configure Jerk City to obtain your jerks!");
                 return;
             }
 
@@ -140,14 +147,85 @@ namespace DiscordIan.Module
             }
         }
 
-        private Embed FormatJerks(string searchString, int index, int total, string url)
+        private async Task JerkCityRandom()
         {
+            await _cache.RemoveAsync(CacheKey);
+
+            if (string.IsNullOrWhiteSpace(_options.JerkCityEndpoint))
+            {
+                await ReplyAsync("You must configure Jerk City to obtain your jerks!");
+                return;
+            }
+
+            var headers = new Dictionary<string, string>
+            {
+                { "User-Agent", "DiscorIan Discord bot" }
+            };
+
+            var uri = new Uri(_options.JerkCityBaseEndpoint);
+
+            var jerkCurrent = await _fetchService
+                .GetAsync<JerkCityModel.JerkResponse>(uri, headers);
+
+            if (jerkCurrent.IsSuccessful)
+            {
+                var high = jerkCurrent.Data.meta.high;
+                var rand = RandomNumberGenerator.GetInt32(high);
+                if (rand == 0)
+                {
+                    rand++;
+                }
+
+                uri = new Uri(uri.AbsoluteUri +
+                    string.Format("/episode/{0}", rand.ToString()));
+
+                var jerkResult = await _fetchService
+                .GetAsync<JerkCityModel.JerkResponse>(uri, headers);
+
+                if (jerkResult.IsSuccessful)
+                {
+                    var response = jerkResult.Data;
+
+                    if (response == null)
+                    {
+                        await ReplyAsync("Error in Jerk City response.");
+                        return;
+                    }
+                    if (response.episodes.Count() == 0)
+                    {
+                        await ReplyAsync("No Jerks Found.");
+                        return;
+                    }
+
+                    var url = uri.BaseUrl() + response.episodes[0].image;
+
+                    await ReplyAsync(null,
+                        false,
+                        FormatJerks(string.Format("Episode {0}", rand.ToString()), 
+                            0, 
+                            0, 
+                            url));
+                }
+            }
+            else
+            {
+                await ReplyAsync($"Jerk City failure: {jerkCurrent.Message}");
+            }
+        }
+
+        private Embed FormatJerks(string title, int index, int total, string url)
+        {
+            if (index > 0 && total > 0)
+            {
+                title = string.Format("{0}: ({1}/{2})",
+                    title,
+                    index.ToString(),
+                    total.ToString());
+            }
+
             return new EmbedBuilder()
             {
-                Description = string.Format("{0}: ({1}/{2})",
-                    searchString,
-                    index.ToString(),
-                    total.ToString()),
+                Description = title,
                 ImageUrl = url
             }.Build();
         }

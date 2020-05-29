@@ -20,5 +20,6 @@
         public string IanStockCompanyEndpoint { get; set; }
         public string IanStockQuoteEndpoint { get; set; }
         public string JerkCityEndpoint { get; set; }
+        public string JerkCityBaseEndpoint { get; set; }
     }
 }
