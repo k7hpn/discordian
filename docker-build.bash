@@ -142,7 +142,7 @@ if [[ $BLD_PUBLISH = true ]]; then
     docker tag "$BLD_FULL_DOCKER_IMAGE" "${BLD_DOCKER_USERNAME}/${BLD_FULL_DOCKER_IMAGE}"
 
     echo "=== Pushing image $BLD_FULL_DOCKER_IMAGE"
-    docker push "$BLD_FULL_DOCKER_IMAGE"
+    docker push "${BLD_DOCKER_USERNAME}/${BLD_FULL_DOCKER_IMAGE}"
 
     echo "=== Executing logout"
     if [[ -z $BLD_DOCKER_HOST ]]; then
