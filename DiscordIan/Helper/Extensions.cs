@@ -25,6 +25,18 @@ namespace DiscordIan.Helper
             return string.Empty;
         }
 
+        public static string BaseUrl(this Uri uri)
+        {
+            if (uri?.IsAbsoluteUri ?? false)
+            {
+                return string.Format("{0}://{1}",
+                    uri.Scheme,
+                    uri.Host);
+            }
+
+            return string.Empty;
+        }
+
         public static string WordSwap(this string str, IDistributedCache cache)
         {
             if (str == null)

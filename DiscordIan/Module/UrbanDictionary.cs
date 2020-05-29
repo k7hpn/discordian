@@ -181,7 +181,7 @@ namespace DiscordIan.Module
                 return;
             }
 
-            await ReplyAsync((await GetCachedDefinition()).ToString().WordSwap(_cache));
+            await ReplyAsync(await GetCachedDefinition());
         }
 
         [Command("udstat", RunMode = RunMode.Async)]
