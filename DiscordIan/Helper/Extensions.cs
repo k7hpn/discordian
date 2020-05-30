@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using DiscordIan.Key;
 using DiscordIan.Model;
 using Microsoft.Extensions.Caching.Distributed;
@@ -10,19 +11,23 @@ namespace DiscordIan.Helper
 {
     public static class Extensions
     {
+        public static string IsNullOrEmptyReplace(this string str, string replace)
+        {
+            return (str == null || str == "") ? replace : str;            
+        }
         public static string ToTitleCase(this string str)
         {
             return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str);
         }
 
+        public static string StripHTML(this string str)
+        {
+            return Regex.Replace(str, "<.*?>", string.Empty);
+        }
+
         public static string ValidateUri(this Uri uri)
         {
-            if (uri?.IsAbsoluteUri ?? false)
-            {
-                return uri.AbsoluteUri;
-            }
-
-            return string.Empty;
+            return (uri?.IsAbsoluteUri ?? false) ? uri.AbsoluteUri : string.Empty;
         }
 
         public static string BaseUrl(this Uri uri)

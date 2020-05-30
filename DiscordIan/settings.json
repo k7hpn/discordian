@@ -10,8 +10,10 @@
   "IanImdbIdUrl": "https://www.imdb.com/title/{0}/",
   "IanStockCompanyEndpoint": "https://finnhub.io/api/v1/stock/profile2?symbol={0}&token={1}",
   "IanStockQuoteEndpoint": "https://finnhub.io/api/v1/quote?symbol={0}&token={1}",
-  "JerkCityEndpoint": "https://www.bonequest.com/api/v2/search/?q=\"{0}\"",
-  "JerkCityBaseEndpoint": "https://www.bonequest.com/api/v2/",
+  "IanJerkCityEndpoint": "https://www.bonequest.com/api/v2/search/?q=\"{0}\"",
+  "IanJerkCityBaseEndpoint": "https://www.bonequest.com/api/v2/",
+  "IanGameSummaryEndpoint": "https://api.rawg.io/api/games?page_size=1&search={0}",
+  "IanGameDetailEndpoint": "https://api.rawg.io/api/games/{0}",
   "Serilog": {
     "WriteTo": [
       {

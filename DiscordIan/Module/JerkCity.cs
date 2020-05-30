@@ -54,7 +54,7 @@ namespace DiscordIan.Module
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(_options.JerkCityEndpoint))
+            if (string.IsNullOrWhiteSpace(_options.IanJerkCityEndpoint))
             {
                 await ReplyAsync("You must configure Jerk City to obtain your jerks!");
                 return;
@@ -65,7 +65,7 @@ namespace DiscordIan.Module
                 { "User-Agent", "DiscorIan Discord bot" }
             };
 
-            var uri = new Uri(string.Format(_options.JerkCityEndpoint,
+            var uri = new Uri(string.Format(_options.IanJerkCityEndpoint,
                 HttpUtility.UrlEncode(input)
                 ));
 
@@ -151,7 +151,7 @@ namespace DiscordIan.Module
         {
             await _cache.RemoveAsync(CacheKey);
 
-            if (string.IsNullOrWhiteSpace(_options.JerkCityEndpoint))
+            if (string.IsNullOrWhiteSpace(_options.IanJerkCityEndpoint))
             {
                 await ReplyAsync("You must configure Jerk City to obtain your jerks!");
                 return;
@@ -162,7 +162,7 @@ namespace DiscordIan.Module
                 { "User-Agent", "DiscorIan Discord bot" }
             };
 
-            var uri = new Uri(_options.JerkCityBaseEndpoint);
+            var uri = new Uri(_options.IanJerkCityBaseEndpoint);
 
             var jerkCurrent = await _fetchService
                 .GetAsync<JerkCityModel.JerkResponse>(uri, headers);
