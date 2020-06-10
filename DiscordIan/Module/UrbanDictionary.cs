@@ -18,6 +18,7 @@ namespace DiscordIan.Module
     public class UrbanDictionary : BaseModule
     {
         private const string NotConfigured = "Please configure Urban Dictionary before using it.";
+        private const int PageMax = 10;
 
         private readonly IDistributedCache _cache;
         private readonly FetchService _fetchService;
@@ -38,11 +39,11 @@ namespace DiscordIan.Module
         {
             get
             {
-                return string.Format(Key.Cache.UrbanDictionary, Context.User.Id);
+                return string.Format(Key.Cache.UrbanDictionary, Context.Channel.Id);
             }
         }
 
-        private string FormatDefinition(UrbanDefinition[] definitions, int index)
+        private string FormatDefinition(UrbanDefinition[] definitions, int index, int page)
         {
             var definition = definitions[index];
             var response = new StringBuilder(definition.Word);
@@ -53,6 +54,8 @@ namespace DiscordIan.Module
                     .Append(index + 1)
                     .Append("/")
                     .Append(definitions.Length)
+                    .Append(", page ")
+                    .Append(page)
                     .Append(")");
             }
 
@@ -72,12 +75,13 @@ namespace DiscordIan.Module
             return response.ToString();
         }
 
-        private async Task<string> GetDefinition(string term)
+        private async Task<string> GetDefinition(string term, int page)
         {
             try
             {
                 var uri = new Uri(string.Format(_options.IanUrbanDictionaryEndpoint,
-                    HttpUtility.UrlEncode(term)));
+                    HttpUtility.UrlEncode(term),
+                    page.ToString()));
                 var response = await _fetchService.GetAsync<UrbanResponse>(uri);
 
                 if (response?.IsSuccessful == true)
@@ -114,9 +118,10 @@ namespace DiscordIan.Module
                             JsonSerializer.Serialize(new CachedDefinitions
                             {
                                 CreatedAt = DateTime.Now,
-                                List = definitions.List
+                                List = definitions.List,
+                                LastViewedPage = page
                             }));
-                        return FormatDefinition(definitions.List, 0);
+                        return FormatDefinition(definitions.List, 0, page);
                     }
                     else
                     {
@@ -139,7 +144,7 @@ namespace DiscordIan.Module
 
             if (cachedString?.Length == 0)
             {
-                return $"I've got nothing for you, {Context.User.Username}";
+                return "No definitions queued.";
             }
             else
             {
@@ -151,7 +156,19 @@ namespace DiscordIan.Module
                     await _cache.SetStringAsync(CacheKey,
                         JsonSerializer.Serialize(cached));
 
-                    return FormatDefinition(cached.List, cached.LastViewedDefinition);
+                    return FormatDefinition(cached.List, cached.LastViewedDefinition, cached.LastViewedPage);
+                }
+                else if (cached.List.Length == cached.LastViewedDefinition 
+                    && cached.LastViewedDefinition == PageMax)
+                {
+                    cached.LastViewedPage++;
+                    cached.LastViewedDefinition = 0;
+
+                    await _cache.RemoveAsync(CacheKey);
+                    await _cache.SetStringAsync(CacheKey,
+                        JsonSerializer.Serialize(cached));
+
+                    return (await GetDefinition(cached.List[0].Word, cached.LastViewedPage)).ToString().WordSwap(_cache);
                 }
             }
             return "That's all, folks.";
@@ -168,7 +185,7 @@ namespace DiscordIan.Module
                 return;
             }
 
-            await ReplyAsync((await GetDefinition(text)).ToString().WordSwap(_cache));
+            await ReplyAsync((await GetDefinition(text, 1)).ToString().WordSwap(_cache));
         }
 
         [Command("udnext", RunMode = RunMode.Async)]
