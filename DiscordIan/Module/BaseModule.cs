@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using DiscordIan.Helper;
 using DiscordIan.Model;
 using Microsoft.Extensions.Caching.Distributed;
 

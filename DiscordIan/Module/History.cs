@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Discord.Commands;
+using DiscordIan.Helper;
 using DiscordIan.Key;
 using DiscordIan.Model;
 using DiscordIan.Service;
@@ -52,7 +53,7 @@ namespace DiscordIan.Module
 
                 if (string.IsNullOrEmpty(user) || item.UserName == user)
                 {
-                    sb.AppendLine($"**User:** {item.UserName} **Date:** {item.AddDate:MM/dd hh:mm tt} **Service:** {item.Service} **Input:** {item.Input} **Timing:** {item.Timing}");
+                    sb.AppendLine($"**User:** {item.UserName} **Date:** {DateHelper.UTCtoEST(item.AddDate)} **Service:** {item.Service} **Input:** {item.Input} **Timing:** {item.Timing}");
                     items++;
                 }
             }

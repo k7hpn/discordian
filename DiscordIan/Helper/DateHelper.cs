@@ -19,6 +19,12 @@ namespace DiscordIan.Helper
         {
             DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                 .AddSeconds(unixTimeStamp);
+
+            return UTCtoEST(dtDateTime);
+        }
+
+        public static string UTCtoEST(DateTime dateTime)
+        {
             TimeZoneInfo timeZone = TimeZoneInfo.Utc;
             var timeZoneCode = "UTC";
 
@@ -35,13 +41,13 @@ namespace DiscordIan.Helper
                     timeZoneCode = "EST";
                 }
 
-            } 
+            }
             catch
             {
 
-            }            
+            }
 
-            return TimeZoneInfo.ConvertTimeFromUtc(dtDateTime, timeZone)
+            return TimeZoneInfo.ConvertTimeFromUtc(dateTime, timeZone)
                 .ToString("MM/dd/yyyy HH:mm tt ") + timeZoneCode;
         }
     }
