@@ -9,6 +9,7 @@ using DiscordIan.Model.Stocks;
 using DiscordIan.Service;
 using DiscordIan.Helper;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace DiscordIan.Module
 {
@@ -16,14 +17,19 @@ namespace DiscordIan.Module
     {
         private readonly FetchService _fetchService;
         private readonly Model.Options _options;
+        private readonly IDistributedCache _cache;
+        private TimeSpan apiTiming = new TimeSpan();
 
         public Stock(FetchService fetchService,
-            IOptionsMonitor<Model.Options> optionsAccessor)
+            IOptionsMonitor<Model.Options> optionsAccessor,
+            IDistributedCache cache)
         {
             _fetchService = fetchService
                 ?? throw new ArgumentNullException(nameof(fetchService));
             _options = optionsAccessor.CurrentValue
                 ?? throw new ArgumentNullException(nameof(optionsAccessor));
+            _cache = cache
+                ?? throw new ArgumentNullException(nameof(cache));
         }
 
         [Command("quote", RunMode = RunMode.Async)]
@@ -60,6 +66,8 @@ namespace DiscordIan.Module
                     false,
                     FormatStockResponse(stockResponse));
             }
+
+            HistoryAdd(_cache, GetType().Name, input, apiTiming);
         }
 
         private async Task<StockModel> GetQuoteAsync(string input)
@@ -77,7 +85,9 @@ namespace DiscordIan.Module
                 HttpUtility.UrlEncode(input),
                 _options.IanStockKey));
 
+            var startTime = DateTime.Now;
             var responseCompany = await _fetchService.GetAsync<StockCompany>(uriCompany, headers);
+            apiTiming += DateTime.Now - startTime;
 
             if (responseCompany.IsSuccessful)
             {
@@ -97,7 +107,9 @@ namespace DiscordIan.Module
                     result.Symbol = input;
                 }
 
+                startTime = DateTime.Now;
                 var responseQuote = await _fetchService.GetAsync<StockQuote>(uriQuote, headers);
+                apiTiming += DateTime.Now - startTime;
 
                 if (responseQuote.IsSuccessful)
                 {

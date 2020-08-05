@@ -18,6 +18,7 @@ namespace DiscordIan.Module
         private readonly IDistributedCache _cache;
         private readonly FetchService _fetchService;
         private readonly Model.Options _options;
+        private TimeSpan apiTiming = new TimeSpan();
 
         public OpenWeather(IDistributedCache cache,
             FetchService fetchService,
@@ -88,6 +89,8 @@ namespace DiscordIan.Module
             {
                 await ReplyAsync(message.WordSwap(_cache), false, embed);
             }
+
+            HistoryAdd(_cache, GetType().Name, location, apiTiming);
         }
 
         private async Task<(string, Discord.Embed)>
@@ -108,16 +111,20 @@ namespace DiscordIan.Module
                 HttpUtility.UrlEncode(coordinates.Split(",")[1]),
                 _options.IanOpenWeatherKey));
 
+            var startTime = DateTime.Now;
             var responseCurrent = await _fetchService
                 .GetAsync<WeatherCurrent.Current>(uriCurrent, headers);
+            apiTiming += DateTime.Now - startTime;
 
             if (responseCurrent.IsSuccessful)
             {
                 string message;
                 var currentData = responseCurrent.Data;
 
+                startTime = DateTime.Now;
                 var responseForecast = await _fetchService
                     .GetAsync<WeatherForecast.Forecast>(uriForecast, headers);
+                apiTiming += DateTime.Now - startTime;
 
                 if (responseForecast.IsSuccessful)
                 {
@@ -152,8 +159,10 @@ namespace DiscordIan.Module
                 HttpUtility.UrlEncode(input),
                 _options.IanOpenWeatherKey));
 
+            var startTime = DateTime.Now;
             var response = await _fetchService
                 .GetAsync<WeatherCurrent.Current>(uri, headers);
+            apiTiming += DateTime.Now - startTime;
 
             if (response.IsSuccessful)
             {
@@ -195,7 +204,9 @@ namespace DiscordIan.Module
                 HttpUtility.UrlEncode(location),
                 _options.IanMapQuestKey));
 
+            var startTime = DateTime.Now;
             var response = await _fetchService.GetAsync<MapQuest>(uri);
+            apiTiming += DateTime.Now - startTime;
 
             if (response.IsSuccessful)
             {

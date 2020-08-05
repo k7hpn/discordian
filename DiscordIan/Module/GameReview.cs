@@ -8,6 +8,7 @@ using Discord.Commands;
 using DiscordIan.Helper;
 using DiscordIan.Model.GameReview;
 using DiscordIan.Service;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 
 namespace DiscordIan.Module
@@ -16,14 +17,19 @@ namespace DiscordIan.Module
     {
         private readonly FetchService _fetchService;
         private readonly Model.Options _options;
+        private readonly IDistributedCache _cache;
+        private TimeSpan apiTiming = new TimeSpan();
 
         public GameReview(FetchService fetchService,
-            IOptionsMonitor<Model.Options> optionsAccessor)
+            IOptionsMonitor<Model.Options> optionsAccessor,
+            IDistributedCache cache)
         {
             _fetchService = fetchService
                 ?? throw new ArgumentNullException(nameof(fetchService));
             _options = optionsAccessor.CurrentValue
                 ?? throw new ArgumentNullException(nameof(optionsAccessor));
+            _cache =  cache
+                ?? throw new ArgumentNullException(nameof(cache));
         }
 
         [Command("game", RunMode = RunMode.Async)]
@@ -47,8 +53,10 @@ namespace DiscordIan.Module
                 HttpUtility.UrlEncode(input)
                 ));
 
+            var startTime = DateTime.Now;
             var summaryResult = await _fetchService
                 .GetAsync<GameSummaryModel.Summary>(uriSummary, headers);
+            apiTiming += DateTime.Now - startTime;
 
             if (summaryResult.IsSuccessful)
             {
@@ -68,8 +76,10 @@ namespace DiscordIan.Module
                     HttpUtility.UrlEncode(summaryData.Results[0].Slug)
                     ));
 
+                startTime = DateTime.Now;
                 var detailResult = await _fetchService
                     .GetAsync<GameDetailModel.Detail>(uriDetail, headers);
+                apiTiming += DateTime.Now - startTime;
 
                 if (detailResult.IsSuccessful)
                 {
@@ -93,6 +103,8 @@ namespace DiscordIan.Module
             {
                 await ReplyAsync($"Game summary call failure: {summaryResult.Message}");
             }
+
+            HistoryAdd(_cache, GetType().Name, input, apiTiming);
         }
 
         private Embed FormatResponse(GameSummaryModel.Summary summary, GameDetailModel.Detail details)

@@ -23,6 +23,7 @@ namespace DiscordIan.Module
         private readonly IDistributedCache _cache;
         private readonly FetchService _fetchService;
         private readonly Model.Options _options;
+        private TimeSpan apiTiming = new TimeSpan();
 
         public UrbanDictionary(IDistributedCache cache,
             FetchService fetchService,
@@ -82,7 +83,10 @@ namespace DiscordIan.Module
                 var uri = new Uri(string.Format(_options.IanUrbanDictionaryEndpoint,
                     HttpUtility.UrlEncode(term),
                     page.ToString()));
+
+                var startTime = DateTime.Now;
                 var response = await _fetchService.GetAsync<UrbanResponse>(uri);
+                apiTiming += DateTime.Now - startTime;
 
                 if (response?.IsSuccessful == true)
                 {
@@ -186,6 +190,8 @@ namespace DiscordIan.Module
             }
 
             await ReplyAsync((await GetDefinition(text, 1)).ToString().WordSwap(_cache));
+
+            HistoryAdd(_cache, GetType().Name, text, apiTiming);
         }
 
         [Command("udnext", RunMode = RunMode.Async)]

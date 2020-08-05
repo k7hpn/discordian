@@ -22,6 +22,7 @@ namespace DiscordIan.Module
         private readonly FetchService _fetchService;
         private readonly Model.Options _options;
         private readonly IDistributedCache _cache;
+        private TimeSpan apiTiming = new TimeSpan();
 
         private string CacheKey
         {
@@ -69,8 +70,10 @@ namespace DiscordIan.Module
                 HttpUtility.UrlEncode(input)
                 ));
 
+            var startTime = DateTime.Now;
             var jerkResult = await _fetchService
                 .GetAsync<JerkCityModel.JerkResponse>(uri, headers);
+            apiTiming += DateTime.Now - startTime;
 
             if (jerkResult.IsSuccessful)
             {
@@ -107,6 +110,8 @@ namespace DiscordIan.Module
             {
                 await ReplyAsync($"Jerk City failure: {jerkResult.Message}");
             }
+
+            HistoryAdd(_cache, GetType().Name, input, apiTiming);
         }
 
         [Command("jerknext", RunMode = RunMode.Async)]
@@ -164,8 +169,10 @@ namespace DiscordIan.Module
 
             var uri = new Uri(_options.IanJerkCityBaseEndpoint);
 
+            var startTime = DateTime.Now;
             var jerkCurrent = await _fetchService
                 .GetAsync<JerkCityModel.JerkResponse>(uri, headers);
+            apiTiming += DateTime.Now - startTime;
 
             if (jerkCurrent.IsSuccessful)
             {
@@ -179,8 +186,10 @@ namespace DiscordIan.Module
                 uri = new Uri(uri.AbsoluteUri +
                     string.Format("/episode/{0}", rand.ToString()));
 
+                startTime = DateTime.Now;
                 var jerkResult = await _fetchService
-                .GetAsync<JerkCityModel.JerkResponse>(uri, headers);
+                    .GetAsync<JerkCityModel.JerkResponse>(uri, headers);
+                apiTiming += DateTime.Now - startTime;
 
                 if (jerkResult.IsSuccessful)
                 {
@@ -211,6 +220,8 @@ namespace DiscordIan.Module
             {
                 await ReplyAsync($"Jerk City failure: {jerkCurrent.Message}");
             }
+
+            HistoryAdd(_cache, GetType().Name, "n/a", apiTiming);
         }
 
         private Embed FormatJerks(string title, int index, int total, string url)

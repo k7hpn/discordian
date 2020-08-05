@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ namespace DiscordIan.Module
         private readonly FetchService _fetchService;
         private readonly Model.Options _options;
         private readonly IDistributedCache _cache;
+        private TimeSpan apiTiming = new TimeSpan();
 
         public CatFact(FetchService fetchService,
             IOptionsMonitor<Model.Options> optionsAccessor,
@@ -40,8 +42,10 @@ namespace DiscordIan.Module
                 return;
             }
 
+            var startTime = DateTime.Now;
             var catFactResult = await _fetchService
                 .GetAsync<Model.CatFact>(new Uri(_options.IanCatFactEndpoint));
+            apiTiming += DateTime.Now - startTime;
 
             if (catFactResult.IsSuccessful)
             {
@@ -51,6 +55,8 @@ namespace DiscordIan.Module
             {
                 await ReplyAsync($"Cat fact failure: {catFactResult.Message}");
             }
+
+            HistoryAdd(_cache, GetType().Name, "n/a", apiTiming);
         }
     }
 }

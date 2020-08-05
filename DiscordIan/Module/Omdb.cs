@@ -19,6 +19,7 @@ namespace DiscordIan.Module
         private readonly IDistributedCache _cache;
         private readonly FetchService _fetchService;
         private readonly Model.Options _options;
+        private TimeSpan apiTiming = new TimeSpan();
 
         public Omdb(IDistributedCache cache,
             FetchService fetchService,
@@ -72,6 +73,8 @@ namespace DiscordIan.Module
                     false,
                     FormatOmdbResponse(omdbResponse));
             }
+
+            HistoryAdd(_cache, GetType().Name, input, apiTiming);
         }
 
         private async Task<Movie> GetMovieAsync(string input)
@@ -85,7 +88,9 @@ namespace DiscordIan.Module
                 HttpUtility.UrlEncode(input),
                 _options.IanOmdbKey));
 
+            var startTime = DateTime.Now;
             var response = await _fetchService.GetAsync<Movie>(uri, headers);
+            apiTiming += DateTime.Now - startTime;
 
             if (response.IsSuccessful)
             {
