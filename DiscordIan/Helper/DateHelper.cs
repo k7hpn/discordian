@@ -26,6 +26,7 @@ namespace DiscordIan.Helper
         public static string UTCtoEST(DateTime dateTime)
         {
             TimeZoneInfo timeZone = TimeZoneInfo.Utc;
+            var dt = new DateTime(dateTime.Ticks, DateTimeKind.Utc);
             var timeZoneCode = "UTC";
 
             try
@@ -47,7 +48,7 @@ namespace DiscordIan.Helper
 
             }
 
-            return TimeZoneInfo.ConvertTimeFromUtc(dateTime, timeZone)
+            return TimeZoneInfo.ConvertTimeFromUtc(dt, timeZone)
                 .ToString("MM/dd/yyyy HH:mm tt ") + timeZoneCode;
         }
     }
