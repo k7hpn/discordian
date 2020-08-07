@@ -42,7 +42,7 @@ namespace DiscordIan.Module
             var history = JsonSerializer.Deserialize<HistoryModel>(cachedString);
             var response = string.Empty;
 
-            var sb = new StringBuilder(">>> ");
+            var sb = new StringBuilder();
             int items = 0;
 
             foreach (var item in history.HistoryList.OrderByDescending(h => h.AddDate))
@@ -61,7 +61,7 @@ namespace DiscordIan.Module
 
             var reversed = string.Join("\r\n", sb.ToString().Trim().Split('\r', '\n').Reverse());
 
-            await ReplyAsync(reversed);
+            await ReplyAsync(">>> " + reversed);
         }
     }
 }
