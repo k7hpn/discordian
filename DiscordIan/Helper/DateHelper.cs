@@ -23,7 +23,7 @@ namespace DiscordIan.Helper
             return UTCtoEST(dtDateTime);
         }
 
-        public static string UTCtoEST(DateTime dateTime)
+        public static string UTCtoEST(DateTime dateTime, string format = "MM/dd/yyyy hh:mm tt")
         {
             TimeZoneInfo timeZone = TimeZoneInfo.Utc;
             var dt = new DateTime(dateTime.Ticks, DateTimeKind.Utc);
@@ -49,7 +49,7 @@ namespace DiscordIan.Helper
             }
 
             return TimeZoneInfo.ConvertTimeFromUtc(dt, timeZone)
-                .ToString("MM/dd/yyyy HH:mm tt ") + timeZoneCode;
+                .ToString(format) + " " + timeZoneCode;
         }
     }
 }

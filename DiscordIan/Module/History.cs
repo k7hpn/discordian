@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -44,7 +45,7 @@ namespace DiscordIan.Module
             var sb = new StringBuilder(">>> ");
             int items = 0;
 
-            foreach (var item in history.HistoryList)
+            foreach (var item in history.HistoryList.OrderByDescending(h => h.AddDate))
             {
                 if (items == 10)
                 {
@@ -53,12 +54,14 @@ namespace DiscordIan.Module
 
                 if (string.IsNullOrEmpty(user) || item.UserName == user)
                 {
-                    sb.AppendLine($"**User:** {item.UserName} **Date:** {DateHelper.UTCtoEST(item.AddDate)} **Service:** {item.Service} **Input:** {item.Input} **Timing:** {item.Timing}");
+                    sb.AppendLine($"**User:** {item.UserName} **Date:** {DateHelper.UTCtoEST(item.AddDate, "MM/dd hh:mm tt")} **Service:** {item.Service} **Input:** {item.Input} **Timing:** {item.Timing}");
                     items++;
                 }
             }
 
-            await ReplyAsync(sb.ToString().Trim());
+            var reversed = string.Join("\r\n", sb.ToString().Trim().Split('\r', '\n').Reverse());
+
+            await ReplyAsync(reversed);
         }
     }
 }
