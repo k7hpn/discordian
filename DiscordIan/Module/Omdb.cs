@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using Discord;
 using Discord.Commands;
 using DiscordIan.Helper;
+using DiscordIan.Key;
 using DiscordIan.Model.Omdb;
 using DiscordIan.Service;
 using Microsoft.Extensions.Caching.Distributed;
@@ -20,6 +23,14 @@ namespace DiscordIan.Module
         private readonly FetchService _fetchService;
         private readonly Model.Options _options;
         private TimeSpan apiTiming = new TimeSpan();
+
+        private string CacheKey
+        {
+            get
+            {
+                return string.Format(Cache.OmdbStubs, Context.Channel.Id);
+            }
+        }
 
         public Omdb(IDistributedCache cache,
             FetchService fetchService,
@@ -38,14 +49,14 @@ namespace DiscordIan.Module
             [Summary("Name of movie/show")] string input)
         {
             string cachedResponse = await _cache.GetStringAsync(
-                string.Format(Key.Cache.Omdb, input.Trim()));
-            Movie omdbResponse;
+                string.Format(Key.Cache.OmdbStubs, input.Trim()));
+            OmdbStub stubResponse;
 
             if (string.IsNullOrEmpty(cachedResponse))
             {
                 try
                 {
-                    omdbResponse = await GetMovieAsync(input);
+                    stubResponse = await GetStubsAsync(input);
                 }
                 catch (Exception ex)
                 {
@@ -55,29 +66,147 @@ namespace DiscordIan.Module
             }
             else
             {
-                omdbResponse = JsonSerializer.Deserialize<Movie>(
+                var cacheStub = JsonSerializer.Deserialize<CachedMovies>(
                     cachedResponse,
                     new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
+
+                stubResponse = cacheStub.MovieStubs;
             }
 
-            if (omdbResponse?.Response != "True")
+            if (stubResponse?.Response != "True")
             {
-                await ReplyAsync("No result found, sorry!");
+                await ReplyAsync("No results found, sorry!");
             }
             else
             {
+                var imdbID = stubResponse.Search[0].imdbID;
+                Movie movieResponse;
+
+                string cachedMovie = await _cache.GetStringAsync(
+                    string.Format(Key.Cache.Omdb, imdbID.Trim()));
+
+                if (string.IsNullOrEmpty(cachedMovie))
+                {
+                    try
+                    {
+                        movieResponse = await GetMovieAsync(imdbID);
+                    }
+                    catch (Exception ex)
+                    {
+                        await ReplyAsync($"Error! {ex.Message}");
+                        return;
+                    }
+                }
+                else
+                {
+                    movieResponse = JsonSerializer.Deserialize<Movie>(
+                        cachedMovie,
+                        new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                }
+
                 await ReplyAsync(null,
                     false,
-                    FormatOmdbResponse(omdbResponse));
+                    FormatOmdbResponse(movieResponse));
             }
 
             HistoryAdd(_cache, GetType().Name, input, apiTiming);
         }
 
-        private async Task<Movie> GetMovieAsync(string input)
+        [Command("rtnext", RunMode = RunMode.Async)]
+        [Summary("Look up next movie/tv ratings")]
+        public async Task NextAsync()
+        {
+            var cachedResponse = await _cache.GetStringAsync(CacheKey);
+
+            if (cachedResponse?.Length == 0)
+            {
+                await ReplyAsync("No movies queued.");
+            }
+            else
+            {
+                var cached = JsonSerializer.Deserialize<CachedMovies>(cachedResponse);
+                cached.LastViewedMovie++;
+
+                if (cached.MovieStubs.Search.Length > cached.LastViewedMovie)
+                {
+                    await _cache.RemoveAsync(CacheKey);
+                    await _cache.SetStringAsync(CacheKey,
+                        JsonSerializer.Serialize(cached));
+
+                    var movieResponse = await GetMovieAsync(cached.MovieStubs.Search[cached.LastViewedMovie].imdbID);
+
+                    await ReplyAsync(null,
+                        false,
+                        FormatOmdbResponse(movieResponse));
+                }
+                else
+                {
+                    await ReplyAsync("No more results, idiot.");
+                    return;
+                }
+
+                HistoryAdd(_cache, GetType().Name, "n/a", apiTiming);
+            }
+        }
+        private async Task<OmdbStub> GetStubsAsync(string input)
+        {
+            var year = ParseInputForYear(ref input);
+
+            var headers = new Dictionary<string, string>
+            {
+                { "User-Agent", "DiscorIan Discord bot" }
+            };
+
+            var endpoint = string.Format(_options.IanOmdbSearchEndpoint,
+                HttpUtility.UrlEncode(input),
+                _options.IanOmdbKey);
+
+            if (!string.IsNullOrEmpty(year))
+            {
+                endpoint += $"&y={year}";
+            }
+
+            var uri = new Uri(endpoint);
+
+            var startTime = DateTime.Now;
+            var response = await _fetchService.GetAsync<OmdbStub>(uri, headers);
+            apiTiming += DateTime.Now - startTime;
+
+            if (response.IsSuccessful)
+            {
+                var data = response.Data;
+
+                if (data == null)
+                {
+                    throw new Exception("Invalid response data.");
+                }
+
+                var stubCache = new CachedMovies
+                {
+                    LastViewedMovie = 0,
+                    MovieStubs = data
+                };
+
+                await _cache.SetStringAsync(CacheKey,
+                    JsonSerializer.Serialize(stubCache),
+                    new DistributedCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4)
+                    });
+
+                return data;
+            }
+
+            return null;
+        }
+
+        private async Task<Movie> GetMovieAsync(string imdbID)
         {
             var headers = new Dictionary<string, string>
             {
@@ -85,7 +214,7 @@ namespace DiscordIan.Module
             };
 
             var uri = new Uri(string.Format(_options.IanOmdbEndpoint,
-                HttpUtility.UrlEncode(input),
+                HttpUtility.UrlEncode(imdbID),
                 _options.IanOmdbKey));
 
             var startTime = DateTime.Now;
@@ -102,7 +231,7 @@ namespace DiscordIan.Module
                 }
 
                 await _cache.SetStringAsync(
-                    string.Format(Key.Cache.Omdb, input.Trim()),
+                    string.Format(Key.Cache.Omdb, imdbID.Trim()),
                     JsonSerializer.Serialize(data),
                     new DistributedCacheEntryOptions
                     {
@@ -152,6 +281,27 @@ namespace DiscordIan.Module
                         EmbedHelper.MakeField("Ratings:", ratings.ToString().Trim())
                     }
             }.Build();
-        }        
+        }
+
+        private string ParseInputForYear(ref string input)
+        {
+            var splitInput = input.Split(" ");
+
+            if (splitInput.Length == 1)
+            {
+                return string.Empty;
+            }
+
+            var last = splitInput.Last();
+
+            if (Regex.IsMatch(last, "^\\([0-9][0-9][0-9][0-9]\\)$"))
+            {
+                input = input.Remove(input.IndexOf(last)).Trim();
+
+                return last[1..^1];
+            }
+
+            return string.Empty;
+        }
     }
 }
