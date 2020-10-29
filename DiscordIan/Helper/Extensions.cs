@@ -13,7 +13,7 @@ namespace DiscordIan.Helper
     {
         public static string IsNullOrEmptyReplace(this string str, string replace)
         {
-            return (str == null || str == "") ? replace : str;            
+            return (string.IsNullOrEmpty(str)) ? replace : str;            
         }
         public static string ToTitleCase(this string str)
         {

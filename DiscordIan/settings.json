@@ -15,6 +15,7 @@
   "IanJerkCityBaseEndpoint": "https://www.bonequest.com/api/v2/",
   "IanGameSummaryEndpoint": "https://api.rawg.io/api/games?page_size=1&search={0}",
   "IanGameDetailEndpoint": "https://api.rawg.io/api/games/{0}",
+  "IanBooksEndpoint": "https://www.googleapis.com/books/v1/volumes?q={0}&key={1}",
   "Serilog": {
     "WriteTo": [
       {

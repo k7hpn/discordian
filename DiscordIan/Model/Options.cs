@@ -24,5 +24,7 @@
         public string IanJerkCityBaseEndpoint { get; set; }
         public string IanGameSummaryEndpoint { get; set; }
         public string IanGameDetailEndpoint { get; set; }
+        public string IanBooksEndpoint { get; set; }
+        public string IanBooksKey { get; set; }
     }
 }
