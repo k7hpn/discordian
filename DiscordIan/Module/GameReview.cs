@@ -50,7 +50,8 @@ namespace DiscordIan.Module
             };
 
             var uriSummary = new Uri(string.Format(_options.IanGameSummaryEndpoint,
-                HttpUtility.UrlEncode(input)
+                HttpUtility.UrlEncode(input),
+                _options.IanGameKey
                 ));
 
             var startTime = DateTime.Now;
@@ -73,7 +74,8 @@ namespace DiscordIan.Module
                     return;
                 }
                 var uriDetail = new Uri(string.Format(_options.IanGameDetailEndpoint,
-                    HttpUtility.UrlEncode(summaryData.Results[0].Slug)
+                    HttpUtility.UrlEncode(summaryData.Results[0].Slug),
+                    _options.IanGameKey
                     ));
 
                 startTime = DateTime.Now;
