@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using Discord;
@@ -46,6 +48,7 @@ namespace DiscordIan.Module
 
         [Command("jerk", RunMode = RunMode.Async)]
         [Summary("Returns Jerk City quotes.")]
+        [Alias("j")]
         public async Task JerkCityAsync([Remainder]
             [Summary("Search Criteria")] string input = null)
         {
@@ -116,6 +119,7 @@ namespace DiscordIan.Module
 
         [Command("jerknext", RunMode = RunMode.Async)]
         [Summary("Returns next cached Jerk City quote.")]
+        [Alias("jn")]
         public async Task JerkCityNextAsync()
         {
             var cachedString = await _cache.GetStringAsync(CacheKey);
@@ -150,6 +154,56 @@ namespace DiscordIan.Module
                             cached.JerkList[cached.LastViewedJerk]));
                 }
             }
+        }
+
+        [Command("jerkzewt", RunMode = RunMode.Async)]
+        [Summary("Returns single pane from Jerk City comic.")]
+        [Alias("jz")]
+        public async Task JerkCitySingleCell([Remainder]
+            [Summary("Input is comic episode number, comic pane layout (ex: 3x3), and cell selection (ex: 2,1)")] string input = null)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                await ReplyAsync("You must give an input, you jerk!");
+                return;
+            }
+
+            var args = input.Split(" ");
+
+            if (args.Length == 3
+                && int.TryParse(args[0], out int episode)
+                && Regex.IsMatch(args[1], @"^[0-9]x[0-9]$")
+                && Regex.IsMatch(args[2], @"^[0-9],[0-9]$"))
+            {
+                var layoutInput = args[1].Split("x");
+                var selectionInput = args[2].Split(",");
+
+                var jerkUri = new Uri(_options.IanJerkCityEndpoint);
+                var url = $"{jerkUri.Scheme + Uri.SchemeDelimiter + jerkUri.Host}/{episode}.gif";
+
+                var startTime = DateTime.Now;
+                var image = ImageHelper.GetImageFromURL(url);
+                apiTiming += DateTime.Now - startTime;
+
+                var layout = new Tuple<int, int>(Convert.ToInt32(layoutInput[0]), Convert.ToInt32(layoutInput[1]));
+                var selection = new Tuple<int, int>(Convert.ToInt32(selectionInput[0]), Convert.ToInt32(selectionInput[1]));
+                var singleCell = ImageHelper.ClipComicSection(image, layout, selection);
+
+                using (var stream = new MemoryStream())
+                {
+                    singleCell.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg);
+                    stream.Seek(0, SeekOrigin.Begin);
+                    singleCell.Dispose();
+                    await Context.Channel.SendFileAsync(stream, "image.jpeg", string.Empty);
+                }
+            }
+            else
+            {
+                await ReplyAsync("Format your input correctly, jerk!");
+                return;
+            }
+
+            HistoryAdd(_cache, GetType().Name, input, apiTiming);
         }
 
         private async Task JerkCityRandom()
@@ -226,12 +280,14 @@ namespace DiscordIan.Module
 
         private Embed FormatJerks(string title, int index, int total, string url)
         {
+            var ep = Regex.Match(url, @"(?<=\/)[^\/\n]+(?=\.)", RegexOptions.RightToLeft);
             if (index > 0 && total > 0)
             {
-                title = string.Format("{0}: ({1}/{2})",
+                title = string.Format("{0}: ({1}/{2})\nEpisode: {3}",
                     title,
-                    index.ToString(),
-                    total.ToString());
+                    index,
+                    total,
+                    ep);
             }
 
             return new EmbedBuilder()
