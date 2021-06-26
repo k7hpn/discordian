@@ -8,6 +8,13 @@ COPY . ./
 # Publish
 RUN dotnet publish -c Release -o "/app/publish/" --disable-parallel
 
+RUN apt-get update \
+&& apt-get install -y --allow-unauthenticated \
+    libc6-dev \
+    libgdiplus \
+    libx11-dev \
+ && rm -rf /var/lib/apt/lists/*
+
 # Get runtime image
 FROM mcr.microsoft.com/dotnet/core/runtime:3.1 AS publish-stage
 WORKDIR /app
