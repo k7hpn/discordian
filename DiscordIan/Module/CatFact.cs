@@ -42,10 +42,9 @@ namespace DiscordIan.Module
                 return;
             }
 
-            var startTime = DateTime.Now;
             var catFactResult = await _fetchService
                 .GetAsync<Model.CatFact>(new Uri(_options.IanCatFactEndpoint));
-            apiTiming += DateTime.Now - startTime;
+            apiTiming += catFactResult.Elapsed;
 
             if (catFactResult.IsSuccessful)
             {

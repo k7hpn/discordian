@@ -148,9 +148,8 @@ namespace DiscordIan.Module
 
             var uri = new Uri(endpoint);
 
-            var startTime = DateTime.Now;
             var response = await _fetchService.GetAsync<BookList>(uri, headers);
-            apiTiming += DateTime.Now - startTime;
+            apiTiming += response.Elapsed;
 
             if (response.IsSuccessful)
             {

@@ -85,9 +85,8 @@ namespace DiscordIan.Module
                 HttpUtility.UrlEncode(input),
                 _options.IanStockKey));
 
-            var startTime = DateTime.Now;
             var responseCompany = await _fetchService.GetAsync<StockCompany>(uriCompany, headers);
-            apiTiming += DateTime.Now - startTime;
+            apiTiming += responseCompany.Elapsed;
 
             if (responseCompany.IsSuccessful)
             {
@@ -107,9 +106,8 @@ namespace DiscordIan.Module
                     result.Symbol = input;
                 }
 
-                startTime = DateTime.Now;
                 var responseQuote = await _fetchService.GetAsync<StockQuote>(uriQuote, headers);
-                apiTiming += DateTime.Now - startTime;
+                apiTiming += responseQuote.Elapsed;
 
                 if (responseQuote.IsSuccessful)
                 {

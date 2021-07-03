@@ -54,10 +54,9 @@ namespace DiscordIan.Module
                 _options.IanGameKey
                 ));
 
-            var startTime = DateTime.Now;
             var summaryResult = await _fetchService
                 .GetAsync<GameSummaryModel.Summary>(uriSummary, headers);
-            apiTiming += DateTime.Now - startTime;
+            apiTiming += summaryResult.Elapsed;
 
             if (summaryResult.IsSuccessful)
             {
@@ -78,10 +77,9 @@ namespace DiscordIan.Module
                     _options.IanGameKey
                     ));
 
-                startTime = DateTime.Now;
                 var detailResult = await _fetchService
                     .GetAsync<GameDetailModel.Detail>(uriDetail, headers);
-                apiTiming += DateTime.Now - startTime;
+                apiTiming += detailResult.Elapsed;
 
                 if (detailResult.IsSuccessful)
                 {

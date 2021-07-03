@@ -12,7 +12,7 @@
   "IanStockCompanyEndpoint": "https://finnhub.io/api/v1/stock/profile2?symbol={0}&token={1}",
   "IanStockQuoteEndpoint": "https://finnhub.io/api/v1/quote?symbol={0}&token={1}",
   "IanJerkCityEndpoint": "https://www.bonequest.com/api/v2/search/?q=\"{0}\"",
-  "IanJerkCityBaseEndpoint": "https://www.bonequest.com/api/v2/",
+  "IanJerkCityRandomEndpoint": "https://www.bonequest.com/api/v2/quote/random",
   "IanGameSummaryEndpoint": "https://api.rawg.io/api/games?page_size=1&search={0}&key={1}",
   "IanGameDetailEndpoint": "https://api.rawg.io/api/games/{0}?key={1}",
   "IanBooksEndpoint": "https://www.googleapis.com/books/v1/volumes?q={0}&key={1}",

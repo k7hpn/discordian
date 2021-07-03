@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -73,10 +74,9 @@ namespace DiscordIan.Module
                 HttpUtility.UrlEncode(input)
                 ));
 
-            var startTime = DateTime.Now;
             var jerkResult = await _fetchService
                 .GetAsync<JerkCityModel.JerkResponse>(uri, headers);
-            apiTiming += DateTime.Now - startTime;
+            apiTiming += jerkResult.Elapsed;
 
             if (jerkResult.IsSuccessful)
             {
@@ -181,13 +181,12 @@ namespace DiscordIan.Module
                 var jerkUri = new Uri(_options.IanJerkCityEndpoint);
                 var url = $"{jerkUri.Scheme + Uri.SchemeDelimiter + jerkUri.Host}/{episode}.gif";
 
-                var startTime = DateTime.Now;
-                var image = ImageHelper.GetImageFromURL(url);
-                apiTiming += DateTime.Now - startTime;
+                var imageResponse = await _fetchService.GetImageAsync(new Uri(url));
+                apiTiming += imageResponse.Elapsed;
 
                 var layout = new Tuple<int, int>(Convert.ToInt32(layoutInput[0]), Convert.ToInt32(layoutInput[1]));
                 var selection = new Tuple<int, int>(Convert.ToInt32(selectionInput[0]), Convert.ToInt32(selectionInput[1]));
-                var singleCell = ImageHelper.ClipComicSection(image, layout, selection);
+                var singleCell = ImageHelper.ClipComicSection(imageResponse.Data, layout, selection);
 
                 using (var stream = new MemoryStream())
                 {
@@ -221,58 +220,39 @@ namespace DiscordIan.Module
                 { "User-Agent", "DiscorIan Discord bot" }
             };
 
-            var uri = new Uri(_options.IanJerkCityBaseEndpoint);
+            var uri = new Uri(_options.IanJerkCityRandomEndpoint);
 
-            var startTime = DateTime.Now;
-            var jerkCurrent = await _fetchService
+            var jerkRandom = await _fetchService
                 .GetAsync<JerkCityModel.JerkResponse>(uri, headers);
-            apiTiming += DateTime.Now - startTime;
+            apiTiming += jerkRandom.Elapsed;
 
-            if (jerkCurrent.IsSuccessful)
+            if (jerkRandom.IsSuccessful)
             {
-                var high = jerkCurrent.Data.meta.high;
-                var rand = RandomNumberGenerator.GetInt32(high);
-                if (rand == 0)
+                var response = jerkRandom.Data;
+
+                if (response == null)
                 {
-                    rand++;
+                    await ReplyAsync("Error in Jerk City response.");
+                    return;
+                }
+                if (response.episodes.Count() == 0)
+                {
+                    await ReplyAsync("No Jerks Found.");
+                    return;
                 }
 
-                uri = new Uri(uri.AbsoluteUri +
-                    string.Format("/episode/{0}", rand.ToString()));
+                var url = uri.BaseUrl() + response.episodes[0].image;
 
-                startTime = DateTime.Now;
-                var jerkResult = await _fetchService
-                    .GetAsync<JerkCityModel.JerkResponse>(uri, headers);
-                apiTiming += DateTime.Now - startTime;
-
-                if (jerkResult.IsSuccessful)
-                {
-                    var response = jerkResult.Data;
-
-                    if (response == null)
-                    {
-                        await ReplyAsync("Error in Jerk City response.");
-                        return;
-                    }
-                    if (response.episodes.Count() == 0)
-                    {
-                        await ReplyAsync("No Jerks Found.");
-                        return;
-                    }
-
-                    var url = uri.BaseUrl() + response.episodes[0].image;
-
-                    await ReplyAsync(null,
-                        false,
-                        FormatJerks(string.Format("Episode {0}", rand.ToString()), 
-                            0, 
-                            0, 
-                            url));
-                }
+                await ReplyAsync(null,
+                    false,
+                    FormatJerks(string.Format("Episode {0}", response.episodes[0].episode),
+                        0,
+                        0,
+                        url));
             }
             else
             {
-                await ReplyAsync($"Jerk City failure: {jerkCurrent.Message}");
+                await ReplyAsync($"Jerk City failure: {jerkRandom.Message}");
             }
 
             HistoryAdd(_cache, GetType().Name, "n/a", apiTiming);

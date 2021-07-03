@@ -4,16 +4,17 @@ using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace DiscordIan.Helper
 {
     public static class ImageHelper
     {
-        public static Bitmap GetImageFromURL(string url)
+        public async static Task<Bitmap> GetImageFromURI(Uri uri)
         {
             Bitmap response;
 
-            var data = GetImageData(url);
+            var data = await GetImageData(uri);
 
             var streamBitmap = new MemoryStream(data);
             response = new Bitmap(Image.FromStream(streamBitmap));
@@ -39,16 +40,23 @@ namespace DiscordIan.Helper
             return CropImage(image, rect);
         }
 
-        private static byte[] GetImageData(string url)
+        private async static Task<byte[]> GetImageData(Uri uri)
         {
             byte[] imageBytes;
 
-            using (var webClient = new WebClient())
+            try
             {
-                imageBytes = webClient.DownloadData(url);
-            }
+                using (var webClient = new WebClient())
+                {
+                    imageBytes = await webClient.DownloadDataTaskAsync(uri);
+                }
 
-            return imageBytes;
+                return imageBytes;
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
         private static Bitmap CropImage(Bitmap image, Rectangle cropArea)

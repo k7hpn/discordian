@@ -174,9 +174,8 @@ namespace DiscordIan.Module
 
             var uri = new Uri(endpoint);
 
-            var startTime = DateTime.Now;
             var response = await _fetchService.GetAsync<OmdbStub>(uri, headers);
-            apiTiming += DateTime.Now - startTime;
+            apiTiming += response.Elapsed;
 
             if (response.IsSuccessful)
             {
@@ -217,9 +216,8 @@ namespace DiscordIan.Module
                 HttpUtility.UrlEncode(imdbID),
                 _options.IanOmdbKey));
 
-            var startTime = DateTime.Now;
             var response = await _fetchService.GetAsync<Movie>(uri, headers);
-            apiTiming += DateTime.Now - startTime;
+            apiTiming += response.Elapsed;
 
             if (response.IsSuccessful)
             {

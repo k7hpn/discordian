@@ -84,9 +84,8 @@ namespace DiscordIan.Module
                     HttpUtility.UrlEncode(term),
                     page.ToString()));
 
-                var startTime = DateTime.Now;
                 var response = await _fetchService.GetAsync<UrbanResponse>(uri);
-                apiTiming += DateTime.Now - startTime;
+                apiTiming += response.Elapsed;
 
                 if (response?.IsSuccessful == true)
                 {

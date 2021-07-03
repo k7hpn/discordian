@@ -21,7 +21,7 @@
         public string IanStockCompanyEndpoint { get; set; }
         public string IanStockQuoteEndpoint { get; set; }
         public string IanJerkCityEndpoint { get; set; }
-        public string IanJerkCityBaseEndpoint { get; set; }
+        public string IanJerkCityRandomEndpoint { get; set; }
         public string IanGameSummaryEndpoint { get; set; }
         public string IanGameDetailEndpoint { get; set; }
         public string IanGameKey { get; set; }
