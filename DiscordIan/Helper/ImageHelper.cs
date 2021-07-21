@@ -22,22 +22,24 @@ namespace DiscordIan.Helper
             return response;
         }
 
-        public static Bitmap ClipComicSection(Bitmap image, Tuple<int, int> layout, Tuple<int, int> selection)
+        public static Bitmap ClipComicSection(Bitmap image, Tuple<int, int> layout, int selection)
         {
+            if (selection > (layout.Item1 * layout.Item2))
+            {
+                throw new Exception("Selection out of bounds, idiot.");
+            }
+
             var cellSize = new Size()
             {
                 Width = image.Width / layout.Item1,
                 Height = image.Height / layout.Item2
             };
 
-            var startPos = new Point() {
-                X = (selection.Item1 - 1) * cellSize.Width,
-                Y = (selection.Item2 - 1) * cellSize.Height
-            };
+            var startPos = DetermineStartPoint(layout.Item1, selection, cellSize);
 
             var rect = new Rectangle(startPos, cellSize);
 
-            return CropImage(image, rect);
+            return image.CropImage(rect).TrimWhiteSpace();
         }
 
         private async static Task<byte[]> GetImageData(Uri uri)
@@ -53,16 +55,19 @@ namespace DiscordIan.Helper
 
                 return imageBytes;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new Exception(ex.Message);
             }
         }
 
-        private static Bitmap CropImage(Bitmap image, Rectangle cropArea)
+        private static Point DetermineStartPoint(int rows, int selection, Size cellSize)
         {
-            var newImage = new Bitmap(image);
-            return newImage.Clone(cropArea, newImage.PixelFormat);
-        }
+            return new Point
+            {
+                X = ((selection - 1) % rows) * cellSize.Width,
+                Y = ((selection - 1) / rows) * cellSize.Height
+            };
+        }        
     }
 }

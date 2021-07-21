@@ -173,10 +173,10 @@ namespace DiscordIan.Module
             if (args.Length == 3
                 && int.TryParse(args[0], out int episode)
                 && Regex.IsMatch(args[1], @"^[0-9]x[0-9]$")
-                && Regex.IsMatch(args[2], @"^[0-9],[0-9]$"))
+                && Regex.IsMatch(args[2], @"^[0-9]$"))
             {
                 var layoutInput = args[1].Split("x");
-                var selectionInput = args[2].Split(",");
+                var selectionInput = args[2];
 
                 var jerkUri = new Uri(_options.IanJerkCityEndpoint);
                 var url = $"{jerkUri.Scheme + Uri.SchemeDelimiter + jerkUri.Host}/{episode}.gif";
@@ -185,8 +185,7 @@ namespace DiscordIan.Module
                 apiTiming += imageResponse.Elapsed;
 
                 var layout = new Tuple<int, int>(Convert.ToInt32(layoutInput[0]), Convert.ToInt32(layoutInput[1]));
-                var selection = new Tuple<int, int>(Convert.ToInt32(selectionInput[0]), Convert.ToInt32(selectionInput[1]));
-                var singleCell = ImageHelper.ClipComicSection(imageResponse.Data, layout, selection);
+                var singleCell = ImageHelper.ClipComicSection(imageResponse.Data, layout, Convert.ToInt32(selectionInput));
 
                 using (var stream = new MemoryStream())
                 {
