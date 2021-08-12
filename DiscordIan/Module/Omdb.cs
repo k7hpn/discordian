@@ -43,13 +43,59 @@ namespace DiscordIan.Module
                 ?? throw new ArgumentNullException(nameof(optionsAccessor));
         }
 
+        [Command("rtexact", RunMode = RunMode.Async)]
+        [Summary("Look up movie/tv ratings, exact title")]
+        public async Task ExactAsync([Remainder]
+            [Summary("Exact name of movie/show")] string input)
+        {
+            string cachedMovie = await _cache.GetStringAsync(
+                string.Format(Cache.Omdb, input.Trim()));
+            Movie movieResponse;
+            var year = ParseInputForYear(ref input);
+
+            if (string.IsNullOrEmpty(cachedMovie))
+            {
+                try
+                {
+                    var endpoint = _options.IanOmdbExactEndpoint;
+
+                    if (!string.IsNullOrEmpty(year))
+                    {
+                        endpoint += $"&y={year}";
+                    }
+
+                    movieResponse = await GetMovieAsync(input, endpoint);
+                }
+                catch (Exception ex)
+                {
+                    await ReplyAsync($"Error! {ex.Message}");
+                    return;
+                }
+            }
+            else
+            {
+                movieResponse = JsonSerializer.Deserialize<Movie>(
+                    cachedMovie,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+            }
+
+            await ReplyAsync(null,
+                false,
+                FormatOmdbResponse(movieResponse));
+
+            HistoryAdd(_cache, GetType().Name, input, apiTiming);
+        }
+
         [Command("rt", RunMode = RunMode.Async)]
         [Summary("Look up movie/tv ratings")]
         public async Task CurrentAsync([Remainder]
             [Summary("Name of movie/show")] string input)
         {
             string cachedResponse = await _cache.GetStringAsync(
-                string.Format(Key.Cache.OmdbStubs, input.Trim()));
+                string.Format(Cache.OmdbStubs, input.Trim()));
             OmdbStub stubResponse;
 
             if (string.IsNullOrEmpty(cachedResponse))
@@ -78,7 +124,14 @@ namespace DiscordIan.Module
 
             if (stubResponse?.Response != "True")
             {
-                await ReplyAsync("No results found, sorry!");
+                if (!string.IsNullOrEmpty(stubResponse?.Error))
+                {
+                    await ReplyAsync(stubResponse.Error);
+                }
+                else
+                {
+                    await ReplyAsync("No results found, sorry!");
+                }
             }
             else
             {
@@ -86,13 +139,13 @@ namespace DiscordIan.Module
                 Movie movieResponse;
 
                 string cachedMovie = await _cache.GetStringAsync(
-                    string.Format(Key.Cache.Omdb, imdbID.Trim()));
+                    string.Format(Cache.Omdb, imdbID.Trim()));
 
                 if (string.IsNullOrEmpty(cachedMovie))
                 {
                     try
                     {
-                        movieResponse = await GetMovieAsync(imdbID);
+                        movieResponse = await GetMovieAsync(imdbID, _options.IanOmdbEndpoint);
                     }
                     catch (Exception ex)
                     {
@@ -139,7 +192,7 @@ namespace DiscordIan.Module
                     await _cache.SetStringAsync(CacheKey,
                         JsonSerializer.Serialize(cached));
 
-                    var movieResponse = await GetMovieAsync(cached.MovieStubs.Search[cached.LastViewedMovie].imdbID);
+                    var movieResponse = await GetMovieAsync(cached.MovieStubs.Search[cached.LastViewedMovie].imdbID, _options.IanOmdbEndpoint);
 
                     await ReplyAsync(null,
                         false,
@@ -205,15 +258,15 @@ namespace DiscordIan.Module
             return null;
         }
 
-        private async Task<Movie> GetMovieAsync(string imdbID)
+        private async Task<Movie> GetMovieAsync(string criteria, string endpoint)
         {
             var headers = new Dictionary<string, string>
             {
                 { "User-Agent", "DiscorIan Discord bot" }
             };
 
-            var uri = new Uri(string.Format(_options.IanOmdbEndpoint,
-                HttpUtility.UrlEncode(imdbID),
+            var uri = new Uri(string.Format(endpoint,
+                HttpUtility.UrlEncode(criteria),
                 _options.IanOmdbKey));
 
             var response = await _fetchService.GetAsync<Movie>(uri, headers);
@@ -229,7 +282,7 @@ namespace DiscordIan.Module
                 }
 
                 await _cache.SetStringAsync(
-                    string.Format(Key.Cache.Omdb, imdbID.Trim()),
+                    string.Format(Cache.Omdb, criteria.Trim()),
                     JsonSerializer.Serialize(data),
                     new DistributedCacheEntryOptions
                     {

@@ -19,7 +19,9 @@ namespace DiscordIan.Module
         protected override async Task<IUserMessage> ReplyAsync(string message = null,
             bool isTTS = false,
             Embed embed = null,
-            RequestOptions options = null)
+            RequestOptions options = null,
+            AllowedMentions allowedMentions = null, 
+            MessageReference messageReference = null)
         {
             string response = message;
 
