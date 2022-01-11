@@ -32,9 +32,9 @@ namespace DiscordIan.Module
                 ?? throw new ArgumentNullException(nameof(cache));
         }
 
-        [Command("quote", RunMode = RunMode.Async)]
+        [Command("stock", RunMode = RunMode.Async)]
         [Summary("Look up stock quotes.")]
-        [Alias("quot", "quo", "q")]
+        [Alias("s")]
         public async Task CurrentAsync([Remainder]
             [Summary("Stock symbol.")] string input)
         {

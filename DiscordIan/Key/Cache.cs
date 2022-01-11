@@ -10,5 +10,6 @@ namespace DiscordIan.Key
         public static readonly string WordSwap = "WordSwap";
         public static readonly string JerkCity = "jc.{0}";
         public static readonly string BookList = "book.{0}";
+        public static readonly string Quote = "quote.{0}";
     }
 }

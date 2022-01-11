@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.Data.Sqlite;
 
@@ -9,7 +10,7 @@ namespace DiscordIan.Helper
     {
         public static int GetTableCount(string table)
         {
-            using (var conn = new SqliteConnection("Data Source=/db/bot.db"))
+            using (var conn = new SqliteConnection(GetDataSource()))
             {
                 conn.Open();
                 var command = conn.CreateCommand();
@@ -35,7 +36,7 @@ namespace DiscordIan.Helper
 
         public static void InsertWeather(string id, string name, string location)
         {
-            using (var conn = new SqliteConnection("Data Source=/db/bot.db"))
+            using (var conn = new SqliteConnection(GetDataSource()))
             {
                 conn.Open();
                 var command = conn.CreateCommand();
@@ -49,7 +50,7 @@ namespace DiscordIan.Helper
 
         public static string SelectWeatherDefault(string id)
         {
-            using (var conn = new SqliteConnection("Data Source=/db/bot.db"))
+            using (var conn = new SqliteConnection(GetDataSource()))
             {
                 conn.Open();
                 var command = conn.CreateCommand();
@@ -66,6 +67,38 @@ namespace DiscordIan.Helper
             }
 
             return string.Empty;
+        }
+
+        public static string[] GetQuotes(string keyword = null)
+        {
+            keyword = keyword.IsNullOrEmptyReplace("%");
+            var response = new List<string>();
+
+            var query = keyword == "%"
+                ? @$" select quote from quotes; "
+                : @$" select quote from quotes where quote like '%{keyword}%'; ";
+
+            using (var conn = new SqliteConnection(GetDataSource()))
+            {
+                conn.Open();
+                var command = conn.CreateCommand();
+                command.CommandText = query;
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        response.Add(reader.GetString(0));
+                    }
+                }
+            }
+
+            return response.ToArray();
+        }
+
+        private static string GetDataSource()
+        {
+            return "Data Source=/host/bot.db";
         }
     }
 }
