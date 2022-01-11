@@ -76,7 +76,7 @@ namespace DiscordIan.Module
             }
             else
             {
-                await ReplyAsync(FormatQuote(quoteList[0], input, 1, quoteList.Length));
+                await ReplyAsync(FormatQuote(model));
             }
 
             HistoryAdd(_cache, GetType().Name, input, apiTiming);
@@ -105,12 +105,7 @@ namespace DiscordIan.Module
                     await _cache.SetStringAsync(CacheKey,
                         JsonConvert.SerializeObject(cached));
 
-                    await ReplyAsync(
-                        FormatQuote(
-                            cached.QuoteList[cached.LastViewedQuote],
-                            cached.SearchString,
-                            cached.LastViewedQuote,
-                            cached.QuoteList.Length));
+                    await ReplyAsync(FormatQuote(cached));
 
                     return;
                 }
@@ -120,9 +115,9 @@ namespace DiscordIan.Module
             }
         }
 
-        private string FormatQuote(string quote, string input, int index, int total)
+        private string FormatQuote(CachedQuotes model)
         {
-            return $"{input} ({index}/{total}): {quote}";
+            return $"{model.SearchString} ({model.LastViewedQuote + 1}/{model.QuoteList.Length}): {model.QuoteList[model.LastViewedQuote]}";
         }
     }
 }
