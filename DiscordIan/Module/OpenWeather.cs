@@ -39,20 +39,14 @@ namespace DiscordIan.Module
         {
             if (string.IsNullOrEmpty(location))
             {
-                try
-                {
-                    var defaultLoc = SqliteHelper.SelectWeatherDefault(Context.User.Id.ToString());
-                    location = defaultLoc;
-                }
-                catch(KeyNotFoundException)
+                var defaultLoc = SqliteHelper.SelectWeatherDefault(Context.User.Id.ToString());
+                if (string.IsNullOrEmpty(defaultLoc))
                 {
                     await ReplyAsync("Please provide a location, no default found.");
                     return;
                 }
-                catch
-                {
-                    throw;
-                }
+
+                location = defaultLoc;
             }
 
             string coords = await _cache.GetStringAsync(location);
@@ -130,6 +124,26 @@ namespace DiscordIan.Module
             }
 
             SqliteHelper.InsertWeather(Context.User.Id.ToString(), Context.User.Username, location);
+
+            await ReplyAsync($"Default weather location for {Context.User.Username} set to {location}.");
+
+            HistoryAdd(_cache, GetType().Name, location, apiTiming);
+        }
+
+        [Command("wpeek", RunMode = RunMode.Async)]
+        [Summary("See your default weather location.")]
+        public async Task PeekWeatherCode()
+        {
+            var defaultLoc = SqliteHelper.SelectWeatherDefault(Context.User.Id.ToString());
+
+            if (string.IsNullOrEmpty(defaultLoc))
+            {
+                await ReplyAsync("No default location found.");
+                return;
+            }
+
+            await ReplyAsync($"{Context.User.Username}: {defaultLoc}");
+            return;
         }
 
         private async Task<(string, Discord.Embed)>

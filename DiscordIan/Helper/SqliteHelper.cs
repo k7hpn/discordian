@@ -63,9 +63,9 @@ namespace DiscordIan.Helper
                         return reader.GetString(0);
                     }
                 }
-
-                throw new KeyNotFoundException("Value not returned");
             }
+
+            return string.Empty;
         }
     }
 }
