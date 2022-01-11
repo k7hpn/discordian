@@ -35,19 +35,19 @@ namespace DiscordIan.Module
         [Summary("Look up current weather for a provided address.")]
         [Alias("weather", "w", "wx")]
         public async Task CurrentAsync([Remainder]
-            [Summary("The address or location for current weather conditions")] string location)
+            [Summary("The address or location for current weather conditions")] string location = null)
         {
+            if (string.IsNullOrEmpty(location))
+            {
+                await ReplyAsync("Please provide a location.");
+                return;
+            }
+
             string coords = await _cache.GetStringAsync(location);
             string locale = null;
             if (!string.IsNullOrEmpty(coords))
             {
                 locale = await _cache.GetStringAsync(coords);
-            }
-
-            if (string.IsNullOrEmpty(coords) && string.IsNullOrEmpty(location))
-            {
-                await ReplyAsync("Please provide a location.");
-                return;
             }
 
             if (string.IsNullOrEmpty(coords) || string.IsNullOrEmpty(locale))
@@ -91,6 +91,22 @@ namespace DiscordIan.Module
             }
 
             HistoryAdd(_cache, GetType().Name, location, apiTiming);
+        }
+
+        [Command("wset", RunMode = RunMode.Async)]
+        [Summary("Set your default weather location.")]
+        [Alias("ws")]
+        public async Task SetWeatherCode([Summary("The address or location for current weather conditions")] string location = null)
+        { 
+            if (string.IsNullOrEmpty(location))
+            {
+                await ReplyAsync("Please include a location to set.");
+                return;
+            }
+
+            var sqlite = new SqliteHelper();
+
+            sqlite.InsertWeather(Context.User.Id.ToString(), Context.User.Username, location);
         }
 
         private async Task<(string, Discord.Embed)>
