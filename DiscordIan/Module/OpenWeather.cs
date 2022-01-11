@@ -39,8 +39,20 @@ namespace DiscordIan.Module
         {
             if (string.IsNullOrEmpty(location))
             {
-                await ReplyAsync("Please provide a location.");
-                return;
+                try
+                {
+                    var defaultLoc = SqliteHelper.SelectWeatherDefault(Context.User.Id.ToString());
+                    location = defaultLoc;
+                }
+                catch(KeyNotFoundException)
+                {
+                    await ReplyAsync("Please provide a location, no default found.");
+                    return;
+                }
+                catch
+                {
+                    throw;
+                }
             }
 
             string coords = await _cache.GetStringAsync(location);
@@ -104,9 +116,20 @@ namespace DiscordIan.Module
                 return;
             }
 
-            var sqlite = new SqliteHelper();
+            location = location.ToLower();
 
-            sqlite.InsertWeather(Context.User.Id.ToString(), Context.User.Username, location);
+            if (location.Contains(";")
+                || location.Contains("drop")
+                || location.Contains("delete")
+                || location.Contains("'")
+                || location.Contains("update")
+                || location.Contains("insert"))
+            {
+                await ReplyAsync("Stop it.");
+                return;
+            }
+
+            SqliteHelper.InsertWeather(Context.User.Id.ToString(), Context.User.Username, location);
         }
 
         private async Task<(string, Discord.Embed)>

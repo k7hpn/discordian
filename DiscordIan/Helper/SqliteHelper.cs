@@ -7,9 +7,7 @@ namespace DiscordIan.Helper
 {
     public class SqliteHelper
     {
-        private readonly string _db = "/db/bot.db";
-
-        public int GetTableCount(string table)
+        public static int GetTableCount(string table)
         {
             using (var conn = new SqliteConnection("Data Source=/db/bot.db"))
             {
@@ -35,7 +33,7 @@ namespace DiscordIan.Helper
             }
         }
 
-        public void InsertWeather(string id, string name, string location)
+        public static void InsertWeather(string id, string name, string location)
         {
             using (var conn = new SqliteConnection("Data Source=/db/bot.db"))
             {
@@ -49,7 +47,7 @@ namespace DiscordIan.Helper
             }
         }
 
-        public string SelectWeatherDefault(string id)
+        public static string SelectWeatherDefault(string id)
         {
             using (var conn = new SqliteConnection("Data Source=/db/bot.db"))
             {
