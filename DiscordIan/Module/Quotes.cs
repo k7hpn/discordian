@@ -50,6 +50,12 @@ namespace DiscordIan.Module
                 quoteList = JsonConvert.DeserializeObject<string[]>(cachedQuotes);
             }
 
+            if (!quoteList.Any())
+            {
+                await ReplyAsync("No quotes found.");
+                return;
+            }
+
             var model = new CachedQuotes
             {
                 CreatedAt = DateTime.Now,
