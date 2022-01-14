@@ -112,17 +112,6 @@ namespace DiscordIan.Module
 
             location = location.ToLower();
 
-            if (location.Contains(";")
-                || location.Contains("drop")
-                || location.Contains("delete")
-                || location.Contains("'")
-                || location.Contains("update")
-                || location.Contains("insert"))
-            {
-                await ReplyAsync("Stop it.");
-                return;
-            }
-
             SqliteHelper.InsertWeather(Context.User.Id.ToString(), Context.User.Username, location);
 
             await ReplyAsync($"Default weather location for {Context.User.Username} set to {location}.");

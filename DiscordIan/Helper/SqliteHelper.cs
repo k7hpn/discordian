@@ -36,6 +36,8 @@ namespace DiscordIan.Helper
 
         public static void InsertWeather(string id, string name, string location)
         {
+            ScrubInput(location);
+
             using (var conn = new SqliteConnection(GetDataSource()))
             {
                 conn.Open();
@@ -50,12 +52,50 @@ namespace DiscordIan.Helper
 
         public static string SelectWeatherDefault(string id)
         {
+            ScrubInput(id);
+
+            var cmd = @$" select location from weather where id = {id} LIMIT 1; ";
+
+            return GetOneValue(cmd);
+        }
+
+        public static string[] GetQuotes(string keyword = null)
+        {
+            ScrubInput(keyword);
+            keyword = keyword.IsNullOrEmptyReplace("%");
+
+            var cmd = keyword == "%"
+                ? @$" select quote from quotes; "
+                : @$" select quote from quotes where quote like '%{keyword}%'; ";
+
+            return GetManyValues(cmd);
+        }
+
+        private static string GetDataSource()
+        {
+            return "Data Source=/host/bot.db";
+        }
+
+        private static void ScrubInput(string input)
+        {
+            if (input.Contains(";")
+                || input.Contains("drop")
+                || input.Contains("delete")
+                || input.Contains("'")
+                || input.Contains("update")
+                || input.Contains("insert"))
+            {
+                throw new Exception("Assfuckery detected.");
+            }
+        }
+
+        private static string GetOneValue(string cmd)
+        {
             using (var conn = new SqliteConnection(GetDataSource()))
             {
                 conn.Open();
                 var command = conn.CreateCommand();
-                command.CommandText =
-                    @$" select location from weather where id = {id} LIMIT 1; ";
+                command.CommandText = cmd;
 
                 using (var reader = command.ExecuteReader())
                 {
@@ -69,20 +109,15 @@ namespace DiscordIan.Helper
             return string.Empty;
         }
 
-        public static string[] GetQuotes(string keyword = null)
+        private static string[] GetManyValues(string cmd)
         {
-            keyword = keyword.IsNullOrEmptyReplace("%");
             var response = new List<string>();
-
-            var query = keyword == "%"
-                ? @$" select quote from quotes; "
-                : @$" select quote from quotes where quote like '%{keyword}%'; ";
 
             using (var conn = new SqliteConnection(GetDataSource()))
             {
                 conn.Open();
                 var command = conn.CreateCommand();
-                command.CommandText = query;
+                command.CommandText = cmd;
 
                 using (var reader = command.ExecuteReader())
                 {
@@ -94,11 +129,6 @@ namespace DiscordIan.Helper
             }
 
             return response.ToArray();
-        }
-
-        private static string GetDataSource()
-        {
-            return "Data Source=/host/bot.db";
         }
     }
 }
