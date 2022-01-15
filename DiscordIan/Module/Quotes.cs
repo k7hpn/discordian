@@ -73,12 +73,11 @@ namespace DiscordIan.Module
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(4)
                 });
 
+            quoteList.Shuffle();
+
             if (input == "%")
             {
-                var rand = new Random();
-                var r = rand.Next(0, quoteList.Length - 1);
-
-                await ReplyAsync(quoteList[r]);
+                await ReplyAsync(quoteList[0]);
             }
             else
             {
