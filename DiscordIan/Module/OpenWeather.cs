@@ -42,7 +42,7 @@ namespace DiscordIan.Module
                 var defaultLoc = SqliteHelper.SelectWeatherDefault(Context.User.Id.ToString());
                 if (string.IsNullOrEmpty(defaultLoc))
                 {
-                    await ReplyAsync("Please provide a location, no default found.");
+                    await ReplyAsync("No location provided and no default found.  Provide a location or set a default first using !wset or !ws.");
                     return;
                 }
 
