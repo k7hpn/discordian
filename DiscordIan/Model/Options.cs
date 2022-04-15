@@ -28,5 +28,6 @@
         public string IanGameKey { get; set; }
         public string IanBooksEndpoint { get; set; }
         public string IanBooksKey { get; set; }
+        public string InspiroBotEndpoint { get; set; }
     }
 }

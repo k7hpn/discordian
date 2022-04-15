@@ -17,6 +17,7 @@
   "IanGameSummaryEndpoint": "https://api.rawg.io/api/games?page_size=1&search={0}&key={1}",
   "IanGameDetailEndpoint": "https://api.rawg.io/api/games/{0}?key={1}",
   "IanBooksEndpoint": "https://www.googleapis.com/books/v1/volumes?q={0}&key={1}",
+  "InspiroBotEndpoint": "https://inspirobot.me/api?generate=true",
   "Serilog": {
     "WriteTo": [
       {
