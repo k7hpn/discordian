@@ -175,8 +175,7 @@ namespace DiscordIan.Module
             return;
         }
 
-        private async Task<string>
-            GetWeatherResultAsync(string coordinates, string location)
+        private async Task<string> GetWeatherResultAsync(string coordinates, string location)
         {
             var headers = new Dictionary<string, string>
             {
@@ -410,7 +409,7 @@ namespace DiscordIan.Module
                 ThumbnailUrl = $"http:{data.Current.Condition.Icon}",
                 Fields = new List<EmbedFieldBuilder>() {
                     EmbedHelper.MakeField($"Condition: **{data.Current.Condition.Text}**",
-                        $"  **Temp:** {data.Current.TempF}F / {data.Current.TempC}C"
+                        $"\u200B**Temp:** {data.Current.TempF}F / {data.Current.TempC}C"
                         + "\n" +
                         $"  **Feels Like:** {data.Current.FeelslikeF}F / {data.Current.FeelslikeC}C"
                         + "\n" +
@@ -423,7 +422,8 @@ namespace DiscordIan.Module
                         $"  **High:** {data.Forecast.Forecastday[0].Day.MaxtempF}F / {data.Forecast.Forecastday[0].Day.MaxtempC}C"
                         + "\n" +
                         $"  **Low:** {data.Forecast.Forecastday[0].Day.MintempF}F / {data.Forecast.Forecastday[0].Day.MintempC}C")
-                }
+                },
+                Footer = new EmbedFooterBuilder() { Text = $"Last Updated: {data.Current.LastUpdated}" }
             }.Build();
         }
 
