@@ -10,65 +10,93 @@ namespace DiscordIan.Helper
     {
         public static int GetTableCount(string table)
         {
-            using (var conn = new SqliteConnection(GetDataSource()))
+            try
             {
-                conn.Open();
-                var command = conn.CreateCommand();
-                command.CommandText =
-                    @$" select count(*) from {table}; ";
-
-                using (var reader = command.ExecuteReader())
+                using (var conn = new SqliteConnection(GetDataSource()))
                 {
-                    while (reader.Read())
-                    {
-                        var count = reader.GetString(0);
+                    conn.Open();
+                    var command = conn.CreateCommand();
+                    command.CommandText =
+                        @$" select count(*) from {table}; ";
 
-                        if (int.TryParse(count, out int response))
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
                         {
-                            return response;
+                            var count = reader.GetString(0);
+
+                            if (int.TryParse(count, out int response))
+                            {
+                                return response;
+                            }
                         }
                     }
-                }
 
-                throw new Exception("Value not returned");
+                    throw new Exception("Value not returned");
+                }
+            }
+            catch (SqliteException ex)
+            {
+                throw new Exception($"Problem accessing database: {ex.Message}");
             }
         }
 
         public static void InsertWeather(string id, string name, string location)
         {
-            ScrubInput(location);
-
-            using (var conn = new SqliteConnection(GetDataSource()))
+            try
             {
-                conn.Open();
-                var command = conn.CreateCommand();
-                command.CommandText =
-                    @$" delete from weather where id = {id}; insert into weather (id, name, location) values ({id}, '{name}', '{location}'); ";
+                ScrubInput(location);
 
-                command.ExecuteNonQuery();
-                conn.Close();
+                using (var conn = new SqliteConnection(GetDataSource()))
+                {
+                    conn.Open();
+                    var command = conn.CreateCommand();
+                    command.CommandText =
+                        @$" delete from weather where id = {id}; insert into weather (id, name, location) values ({id}, '{name}', '{location}'); ";
+
+                    command.ExecuteNonQuery();
+                    conn.Close();
+                }
+            }
+            catch (SqliteException ex)
+            {
+                throw new Exception($"Problem accessing database: {ex.Message}");
             }
         }
 
         public static string SelectWeatherDefault(string id)
         {
-            ScrubInput(id);
+            try
+            {
+                ScrubInput(id);
 
-            var cmd = @$" select location from weather where id = {id} LIMIT 1; ";
+                var cmd = @$" select location from weather where id = {id} LIMIT 1; ";
 
-            return GetOneValue(cmd);
+                return GetOneValue(cmd);
+            }
+            catch (SqliteException ex)
+            {
+                throw new Exception($"Problem accessing database: {ex.Message}");
+            }
         }
 
         public static string[] GetQuotes(string keyword = null)
         {
-            ScrubInput(keyword);
-            keyword = keyword.IsNullOrEmptyReplace("%");
+            try
+            {
+                ScrubInput(keyword);
+                keyword = keyword.IsNullOrEmptyReplace("%");
 
-            var cmd = keyword == "%"
-                ? @$" select quote from quotes; "
-                : @$" select quote from quotes where quote like '%{keyword}%'; ";
+                var cmd = keyword == "%"
+                    ? @$" select quote from quotes; "
+                    : @$" select quote from quotes where quote like '%{keyword}%'; ";
 
-            return GetManyValues(cmd);
+                return GetManyValues(cmd);
+            }
+            catch (SqliteException ex)
+            {
+                throw new Exception($"Problem accessing database: {ex.Message}");
+            }
         }
 
         private static string GetDataSource()

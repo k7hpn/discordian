@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Discord;
 using Discord.Commands;
 using DiscordIan.Helper;
 using DiscordIan.Model.MapQuest;
@@ -76,15 +77,14 @@ namespace DiscordIan.Module
             }
 
             string message;
-            Discord.Embed embed;
 
             if (string.IsNullOrEmpty(coords) || string.IsNullOrEmpty(locale))
             {
-                (message, embed) = await GetWeatherResultAsync(location);
+                message = await GetWeatherResultAsync(location);
             }
             else
             {
-                (message, embed) = await GetWeatherResultAsync(coords, locale);
+                message = await GetWeatherResultAsync(coords, locale);
             }
 
             if (string.IsNullOrEmpty(message))
@@ -93,7 +93,38 @@ namespace DiscordIan.Module
             }
             else
             {
-                await ReplyAsync(message.WordSwap(_cache), false, embed);
+                await ReplyAsync(message.WordSwap(_cache), false, null);
+            }
+
+            HistoryAdd(_cache, GetType().Name, location, apiTiming);
+        }
+
+        [Command("w2", RunMode = RunMode.Async)]
+        [Summary("Look up current weather for a provided address.")]
+        public async Task NewCurrentAsync([Remainder]
+            [Summary("The address or location for current weather conditions")] string location = null)
+        {
+            if (string.IsNullOrEmpty(location))
+            {
+                var defaultLoc = SqliteHelper.SelectWeatherDefault(Context.User.Id.ToString());
+                if (string.IsNullOrEmpty(defaultLoc))
+                {
+                    await ReplyAsync("No location provided and no default found.  Provide a location or set a default first using !wset or !ws.");
+                    return;
+                }
+
+                location = defaultLoc;
+            }
+
+            var embed = await GetNewWeatherResultsAsync(location);
+
+            if (embed == null)
+            {
+                await ReplyAsync("No weather found, sorry!");
+            }
+            else
+            {
+                await ReplyAsync(null, false, embed);
             }
 
             HistoryAdd(_cache, GetType().Name, location, apiTiming);
@@ -121,9 +152,10 @@ namespace DiscordIan.Module
 
         [Command("wpeek", RunMode = RunMode.Async)]
         [Summary("See your default weather location.")]
-        public async Task PeekWeatherCode()
+        public async Task PeekWeatherCode([Summary("User to peek, blank for yourself")] string user = null)
         {
-            var defaultLoc = SqliteHelper.SelectWeatherDefault(Context.User.Id.ToString());
+            var userId = user ?? Context.User.Id.ToString();
+            var defaultLoc = SqliteHelper.SelectWeatherDefault(userId);
 
             if (string.IsNullOrEmpty(defaultLoc))
             {
@@ -135,7 +167,7 @@ namespace DiscordIan.Module
             return;
         }
 
-        private async Task<(string, Discord.Embed)>
+        private async Task<string>
             GetWeatherResultAsync(string coordinates, string location)
         {
             var headers = new Dictionary<string, string>
@@ -182,13 +214,13 @@ namespace DiscordIan.Module
                     message = FormatResults(currentData, location);
                 }
 
-                return (message, null);
+                return message;
             }
 
-            return (null, null);
+            return null;
         }
 
-        private async Task<(string, Discord.Embed)> GetWeatherResultAsync(string input)
+        private async Task<string> GetWeatherResultAsync(string input)
         {
             var headers = new Dictionary<string, string>
             {
@@ -225,10 +257,10 @@ namespace DiscordIan.Module
 
                 string message = FormatResults(data, locale);
 
-                return (message, null);
+                return message;
             }
 
-            return (null, null);
+            return null;
         }
 
         private async Task<(string, string)> GeocodeAddressAsync(string location)
@@ -288,6 +320,29 @@ namespace DiscordIan.Module
             return (null, null);
         }
 
+        private async Task<Embed> GetNewWeatherResultsAsync(string input)
+        {
+            var headers = new Dictionary<string, string>
+            {
+                { "User-Agent", "DiscorIan Discord bot" }
+            };
+
+            var uri = new Uri(string.Format(_options.WeatherApiEndpoint,
+                _options.WeatherApiKey,
+                HttpUtility.UrlEncode(input)));
+
+            var response = await _fetchService
+                .GetAsync<WeatherApiModel>(uri, headers);
+            apiTiming += response.Elapsed;
+
+            if (response.IsSuccessful)
+            {
+                return FormatResultsNew(response.Data);
+            }
+
+            return null;
+        }
+
         private string FormatResults(WeatherCurrent.Current data,
             string location,
             WeatherForecast.Daily forecastData = null)
@@ -336,6 +391,32 @@ namespace DiscordIan.Module
             }
 
             return sb.ToString().Trim();
+        }
+
+        private Embed FormatResultsNew(WeatherApiModel data)
+        {
+            return new EmbedBuilder()
+            {
+                Color = Color.Blue,
+                Title = string.Format("{0}, {1}", data.Location.Name, data.Location.Region),
+                ThumbnailUrl = $"http:{data.Current.Condition.Icon}",
+                Fields = new List<EmbedFieldBuilder>() {
+                    EmbedHelper.MakeField($"Condition: **{data.Current.Condition.Text}**",
+                        $"  **Temp:** {data.Current.TempF}F / {data.Current.TempC}C"
+                        + "\n" +
+                        $"  **Feels Like:** {data.Current.FeelslikeF}F / {data.Current.FeelslikeC}C"
+                        + "\n" +
+                        $"  **Humidity:** {data.Current.Humidity}%"),
+                    EmbedHelper.MakeField("Wind:",
+                        $"  **Speed:** {data.Current.WindMph}mph / {data.Current.WindKph}kph"
+                        + "\n" +
+                        $"  **Direction:** {data.Current.WindDir}"),
+                    EmbedHelper.MakeField($"Forecast: **{data.Forecast.Forecastday[0].Day.Condition.Text}**",
+                        $"  **High:** {data.Forecast.Forecastday[0].Day.MaxtempF}F / {data.Forecast.Forecastday[0].Day.MaxtempC}C"
+                        + "\n" +
+                        $"  **Low:** {data.Forecast.Forecastday[0].Day.MintempF}F / {data.Forecast.Forecastday[0].Day.MintempC}C")
+                }
+            }.Build();
         }
 
         private string WeatherIcon(string iconCode)

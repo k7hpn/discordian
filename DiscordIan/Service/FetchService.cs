@@ -54,7 +54,10 @@ namespace DiscordIan.Service
                     response.IsSuccessful = false;
                     response.Elapsed = stopwatch.Elapsed;
                     response.Message = $"HTTP status code {httpResult.StatusCode}";
+
+                    return response;
                 }
+
                 //var test = httpResult.Content.ReadAsStringAsync().Result;
                 response.Data = await DeserializeObjectAsync<T>(
                     httpResult.Content);

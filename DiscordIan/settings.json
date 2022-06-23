@@ -18,6 +18,7 @@
   "IanGameDetailEndpoint": "https://api.rawg.io/api/games/{0}?key={1}",
   "IanBooksEndpoint": "https://www.googleapis.com/books/v1/volumes?q={0}&key={1}",
   "InspiroBotEndpoint": "https://inspirobot.me/api?generate=true",
+  "WeatherApiEndpoint": "https://api.weatherapi.com/v1/forecast.json?key={0}&q={1}&days=3&aqi=no&alerts=no",
   "Serilog": {
     "WriteTo": [
       {

@@ -29,5 +29,7 @@
         public string IanBooksEndpoint { get; set; }
         public string IanBooksKey { get; set; }
         public string InspiroBotEndpoint { get; set; }
+        public string WeatherApiEndpoint { get; set; }
+        public string WeatherApiKey { get; set; }
     }
 }
