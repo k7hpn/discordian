@@ -154,16 +154,24 @@ namespace DiscordIan.Module
         [Summary("See your default weather location.")]
         public async Task PeekWeatherCode([Summary("User to peek, blank for yourself")] string user = null)
         {
-            var userId = user ?? Context.User.Id.ToString();
-            var defaultLoc = SqliteHelper.SelectWeatherDefault(userId);
+            string location;
 
-            if (string.IsNullOrEmpty(defaultLoc))
+            if (string.IsNullOrEmpty(user))
+            {
+                location = SqliteHelper.SelectWeatherDefault(Context.User.Id.ToString());
+            }
+            else
+            {
+                location = SqliteHelper.SelectWeatherDefaultByName(user);
+            }
+
+            if (string.IsNullOrEmpty(location))
             {
                 await ReplyAsync("No default location found.");
                 return;
             }
 
-            await ReplyAsync($"{Context.User.Username}: {defaultLoc}");
+            await ReplyAsync($"{user ?? Context.User.Username}: {location}");
             return;
         }
 

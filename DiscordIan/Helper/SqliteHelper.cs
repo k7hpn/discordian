@@ -80,6 +80,22 @@ namespace DiscordIan.Helper
             }
         }
 
+        public static string SelectWeatherDefaultByName(string name)
+        {
+            try
+            {
+                ScrubInput(name);
+
+                var cmd = @$" select location from weather where name = {name} LIMIT 1; ";
+
+                return GetOneValue(cmd);
+            }
+            catch (SqliteException ex)
+            {
+                throw new Exception($"Problem accessing database: {ex.Message}");
+            }
+        }
+
         public static string[] GetQuotes(string keyword = null)
         {
             try
