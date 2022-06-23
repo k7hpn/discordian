@@ -86,7 +86,7 @@ namespace DiscordIan.Helper
             {
                 ScrubInput(name);
 
-                var cmd = @$" select location from weather where name = {name} LIMIT 1; ";
+                var cmd = @$" select location from weather where name = '{name}' LIMIT 1; ";
 
                 return GetOneValue(cmd);
             }
