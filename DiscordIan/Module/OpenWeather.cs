@@ -412,19 +412,19 @@ namespace DiscordIan.Module
                 ThumbnailUrl = $"http:{data.Current.Condition.Icon}",
                 Fields = new List<EmbedFieldBuilder>() {
                     EmbedHelper.MakeField($"Condition: **{data.Current.Condition.Text.ToTitleCase()}**",
-                        $"\u200B  **Temp:** {data.Current.TempF}F / {data.Current.TempC}C"
-                        + "\n" +
-                        $"\u200B  **Feels Like:** {data.Current.FeelslikeF}F / {data.Current.FeelslikeC}C"
-                        + "\n" +
-                        $"\u200B  **Humidity:** {data.Current.Humidity}%"),
+                        $"\u200B    **Temp:** {data.Current.TempF}F / {data.Current.TempC}C"
+                        + $"\n\u200B    **Feels Like:** {data.Current.FeelslikeF}F / {data.Current.FeelslikeC}C"
+                        + $"\n\u200B    **Humidity:** {data.Current.Humidity}%"),
                     EmbedHelper.MakeField("Wind:",
-                        $"\u200B  **Speed:** {data.Current.WindMph}mph / {data.Current.WindKph}kph"
-                        + "\n" +
-                        $"\u200B  **Direction:** {data.Current.WindDir}"),
+                        $"\u200B    **Speed:** {data.Current.WindMph}mph / {data.Current.WindKph}kph"
+                        + $"\n\u200B    **Direction:** {data.Current.WindDir}"),
                     EmbedHelper.MakeField($"Forecast: **{data.Forecast.Forecastday[0].Day.Condition.Text.ToTitleCase()}**",
-                        $"\u200B  **High:** {data.Forecast.Forecastday[0].Day.MaxtempF}F / {data.Forecast.Forecastday[0].Day.MaxtempC}C"
-                        + "\n" +
-                        $"\u200B  **Low:** {data.Forecast.Forecastday[0].Day.MintempF}F / {data.Forecast.Forecastday[0].Day.MintempC}C")
+                        $"\u200B    **High:** {data.Forecast.Forecastday[0].Day.MaxtempF}F / {data.Forecast.Forecastday[0].Day.MaxtempC}C"
+                        + $"\n\u200B    **Low:** {data.Forecast.Forecastday[0].Day.MintempF}F / {data.Forecast.Forecastday[0].Day.MintempC}C"
+                        + $"\n\u200B    **Chance of Rain:** {data.Forecast.Forecastday[0].Day.DailyChanceOfRain}%"
+                        + (data.Forecast.Forecastday[0].Day.DailyChanceOfSnow > 0 
+                            ? $"\n\u200B    **Chance of Snow:** {data.Forecast.Forecastday[0].Day.DailyChanceOfSnow}%"
+                            : ""))
                 },
                 Footer = new EmbedFooterBuilder() { Text = $"Last Updated: {data.Current.LastUpdated}" }
             }.Build();
@@ -438,25 +438,31 @@ namespace DiscordIan.Module
                 Title = string.Format("{0}, {1}", data.Location.Name, data.Location.Region),
                 Fields = new List<EmbedFieldBuilder>() {
                     EmbedHelper.MakeField($"**{data.Forecast.Forecastday[0].Date}**",
-                        $"\u200B  **{data.Forecast.Forecastday[0].Day.Condition.Text.ToTitleCase()}**"
-                        + "\n" +
-                        $"\u200B  **High:** {data.Forecast.Forecastday[0].Day.MaxtempF}F / {data.Forecast.Forecastday[0].Day.MaxtempC}C"
-                        + "\n" +
-                        $"\u200B  **Low:** {data.Forecast.Forecastday[0].Day.MintempF}F / {data.Forecast.Forecastday[0].Day.MintempC}C",
+                        $"**{data.Forecast.Forecastday[0].Day.Condition.Text.ToTitleCase()}**"
+                        + $"\n**High:** {data.Forecast.Forecastday[0].Day.MaxtempF}F / {data.Forecast.Forecastday[0].Day.MaxtempC}C"
+                        + $"\n**Low:** {data.Forecast.Forecastday[0].Day.MintempF}F / {data.Forecast.Forecastday[0].Day.MintempC}C"
+                        + $"\n**Chance of Rain:** {data.Forecast.Forecastday[0].Day.DailyChanceOfRain}%"
+                        + (data.Forecast.Forecastday[0].Day.DailyChanceOfSnow > 0
+                            ? $"\n**Chance of Snow:** {data.Forecast.Forecastday[0].Day.DailyChanceOfSnow}%"
+                            : ""),
                         true),
                     EmbedHelper.MakeField($"**{data.Forecast.Forecastday[1].Date}**",
-                        $"\u200B  **{data.Forecast.Forecastday[1].Day.Condition.Text.ToTitleCase()}**"
-                        + "\n" +
-                        $"\u200B  **High:** {data.Forecast.Forecastday[1].Day.MaxtempF}F / {data.Forecast.Forecastday[1].Day.MaxtempC}C"
-                        + "\n" +
-                        $"\u200B  **Low:** {data.Forecast.Forecastday[1].Day.MintempF}F / {data.Forecast.Forecastday[1].Day.MintempC}C",
+                        $"**{data.Forecast.Forecastday[1].Day.Condition.Text.ToTitleCase()}**"
+                        + $"\n**High:** {data.Forecast.Forecastday[1].Day.MaxtempF}F / {data.Forecast.Forecastday[1].Day.MaxtempC}C"
+                        + $"\n**Low:** {data.Forecast.Forecastday[1].Day.MintempF}F / {data.Forecast.Forecastday[1].Day.MintempC}C"
+                        + $"\n**Chance of Rain:** {data.Forecast.Forecastday[1].Day.DailyChanceOfRain}%"
+                        + (data.Forecast.Forecastday[1].Day.DailyChanceOfSnow > 0
+                            ? $"\n**Chance of Snow:** {data.Forecast.Forecastday[1].Day.DailyChanceOfSnow}%"
+                            : ""),
                         true),
                     EmbedHelper.MakeField($"**{data.Forecast.Forecastday[2].Date}**",
-                        $"\u200B  **{data.Forecast.Forecastday[2].Day.Condition.Text.ToTitleCase()}**"
-                        + "\n" +
-                        $"\u200B  **High:** {data.Forecast.Forecastday[2].Day.MaxtempF}F / {data.Forecast.Forecastday[2].Day.MaxtempC}C"
-                        + "\n" +
-                        $"\u200B  **Low:** {data.Forecast.Forecastday[2].Day.MintempF}F / {data.Forecast.Forecastday[2].Day.MintempC}C",
+                        $"**{data.Forecast.Forecastday[2].Day.Condition.Text.ToTitleCase()}**"
+                        + $"\n**High:** {data.Forecast.Forecastday[2].Day.MaxtempF}F / {data.Forecast.Forecastday[2].Day.MaxtempC}C"
+                        + $"\n**Low:** {data.Forecast.Forecastday[2].Day.MintempF}F / {data.Forecast.Forecastday[2].Day.MintempC}C"
+                        + $"\n**Chance of Rain:** {data.Forecast.Forecastday[2].Day.DailyChanceOfRain}%"
+                        + (data.Forecast.Forecastday[2].Day.DailyChanceOfSnow > 0
+                            ? $"\n**Chance of Snow:** {data.Forecast.Forecastday[2].Day.DailyChanceOfSnow}%"
+                            : ""),
                         true)
                 },
                 Footer = new EmbedFooterBuilder() { Text = $"Last Updated: {data.Current.LastUpdated}" }
