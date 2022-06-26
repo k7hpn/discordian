@@ -32,9 +32,9 @@ namespace DiscordIan.Module
                 ?? throw new ArgumentNullException(nameof(optionsAccessor));
         }
 
-        [Command("wz", RunMode = RunMode.Async)]
+        [Command("wold", RunMode = RunMode.Async)]
         [Summary("Look up current weather for a provided address.")]
-        [Alias("weather", "w", "wx")]
+        [Alias("w2")]
         public async Task CurrentAsync([Remainder]
             [Summary("The address or location for current weather conditions")] string location = null)
         {
@@ -99,8 +99,9 @@ namespace DiscordIan.Module
             HistoryAdd(_cache, GetType().Name, location, apiTiming);
         }
 
-        [Command("w2", RunMode = RunMode.Async)]
+        [Command("w", RunMode = RunMode.Async)]
         [Summary("Look up current weather for a provided address.")]
+        [Alias("weather", "f", "forecast")]
         public async Task NewCurrentAsync([Remainder]
             [Summary("The address or location for current weather conditions")] string location = null)
         {
@@ -344,7 +345,9 @@ namespace DiscordIan.Module
 
             if (response.IsSuccessful)
             {
-                return FormatResultsNew(response.Data);
+                return Context.Message.Content.StartsWith("!f") 
+                    ? FormatDayForecast(response.Data) 
+                    : FormatResultsNew(response.Data);
             }
 
             return null;
@@ -408,20 +411,53 @@ namespace DiscordIan.Module
                 Title = string.Format("{0}, {1}", data.Location.Name, data.Location.Region),
                 ThumbnailUrl = $"http:{data.Current.Condition.Icon}",
                 Fields = new List<EmbedFieldBuilder>() {
-                    EmbedHelper.MakeField($"Condition: **{data.Current.Condition.Text}**",
-                        $"\u200B**Temp:** {data.Current.TempF}F / {data.Current.TempC}C"
+                    EmbedHelper.MakeField($"Condition: **{data.Current.Condition.Text.ToTitleCase()}**",
+                        $"\u200B  **Temp:** {data.Current.TempF}F / {data.Current.TempC}C"
                         + "\n" +
-                        $"  **Feels Like:** {data.Current.FeelslikeF}F / {data.Current.FeelslikeC}C"
+                        $"\u200B  **Feels Like:** {data.Current.FeelslikeF}F / {data.Current.FeelslikeC}C"
                         + "\n" +
-                        $"  **Humidity:** {data.Current.Humidity}%"),
+                        $"\u200B  **Humidity:** {data.Current.Humidity}%"),
                     EmbedHelper.MakeField("Wind:",
-                        $"  **Speed:** {data.Current.WindMph}mph / {data.Current.WindKph}kph"
+                        $"\u200B  **Speed:** {data.Current.WindMph}mph / {data.Current.WindKph}kph"
                         + "\n" +
-                        $"  **Direction:** {data.Current.WindDir}"),
-                    EmbedHelper.MakeField($"Forecast: **{data.Forecast.Forecastday[0].Day.Condition.Text}**",
-                        $"  **High:** {data.Forecast.Forecastday[0].Day.MaxtempF}F / {data.Forecast.Forecastday[0].Day.MaxtempC}C"
+                        $"\u200B  **Direction:** {data.Current.WindDir}"),
+                    EmbedHelper.MakeField($"Forecast: **{data.Forecast.Forecastday[0].Day.Condition.Text.ToTitleCase()}**",
+                        $"\u200B  **High:** {data.Forecast.Forecastday[0].Day.MaxtempF}F / {data.Forecast.Forecastday[0].Day.MaxtempC}C"
                         + "\n" +
-                        $"  **Low:** {data.Forecast.Forecastday[0].Day.MintempF}F / {data.Forecast.Forecastday[0].Day.MintempC}C")
+                        $"\u200B  **Low:** {data.Forecast.Forecastday[0].Day.MintempF}F / {data.Forecast.Forecastday[0].Day.MintempC}C")
+                },
+                Footer = new EmbedFooterBuilder() { Text = $"Last Updated: {data.Current.LastUpdated}" }
+            }.Build();
+        }
+
+        private Embed FormatDayForecast(WeatherApiModel data)
+        {
+            return new EmbedBuilder()
+            {
+                Color = Color.Purple,
+                Title = string.Format("{0}, {1}", data.Location.Name, data.Location.Region),
+                Fields = new List<EmbedFieldBuilder>() {
+                    EmbedHelper.MakeField($"**{data.Forecast.Forecastday[0].Date}**",
+                        $"\u200B  **{data.Forecast.Forecastday[0].Day.Condition.Text.ToTitleCase()}**"
+                        + "\n" +
+                        $"\u200B  **High:** {data.Forecast.Forecastday[0].Day.MaxtempF}F / {data.Forecast.Forecastday[0].Day.MaxtempC}C"
+                        + "\n" +
+                        $"\u200B  **Low:** {data.Forecast.Forecastday[0].Day.MintempF}F / {data.Forecast.Forecastday[0].Day.MintempC}C",
+                        true),
+                    EmbedHelper.MakeField($"**{data.Forecast.Forecastday[1].Date}**",
+                        $"\u200B  **{data.Forecast.Forecastday[1].Day.Condition.Text.ToTitleCase()}**"
+                        + "\n" +
+                        $"\u200B  **High:** {data.Forecast.Forecastday[1].Day.MaxtempF}F / {data.Forecast.Forecastday[1].Day.MaxtempC}C"
+                        + "\n" +
+                        $"\u200B  **Low:** {data.Forecast.Forecastday[1].Day.MintempF}F / {data.Forecast.Forecastday[1].Day.MintempC}C",
+                        true),
+                    EmbedHelper.MakeField($"**{data.Forecast.Forecastday[2].Date}**",
+                        $"\u200B  **{data.Forecast.Forecastday[2].Day.Condition.Text.ToTitleCase()}**"
+                        + "\n" +
+                        $"\u200B  **High:** {data.Forecast.Forecastday[2].Day.MaxtempF}F / {data.Forecast.Forecastday[2].Day.MaxtempC}C"
+                        + "\n" +
+                        $"\u200B  **Low:** {data.Forecast.Forecastday[2].Day.MintempF}F / {data.Forecast.Forecastday[2].Day.MintempC}C",
+                        true)
                 },
                 Footer = new EmbedFooterBuilder() { Text = $"Last Updated: {data.Current.LastUpdated}" }
             }.Build();
