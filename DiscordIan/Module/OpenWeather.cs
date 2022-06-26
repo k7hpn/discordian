@@ -408,8 +408,8 @@ namespace DiscordIan.Module
             return new EmbedBuilder()
             {
                 Color = Color.Blue,
-                Title = string.Format("{0}, {1}", data.Location.Name, data.Location.Region),
-                ThumbnailUrl = $"http:{data.Current.Condition.Icon}",
+                Title = data.Location.Country == "United States of America" ? $"{data.Location.Name}, {data.Location.Region}" : $"{data.Location.Name}, {data.Location.Country}",
+                ThumbnailUrl = new Uri($"http:{data.Current.Condition.Icon}").ValidateUri(),
                 Fields = new List<EmbedFieldBuilder>() {
                     EmbedHelper.MakeField($"Condition: **{data.Current.Condition.Text.ToTitleCase()}**",
                         $"\u200B    **Temp:** {data.Current.TempF}F / {data.Current.TempC}C"
@@ -435,7 +435,7 @@ namespace DiscordIan.Module
             return new EmbedBuilder()
             {
                 Color = Color.Purple,
-                Title = string.Format("{0}, {1}", data.Location.Name, data.Location.Region),
+                Title = data.Location.Country == "United States of America" ? $"{data.Location.Name}, {data.Location.Region}" : $"{data.Location.Name}, {data.Location.Country}",
                 Fields = new List<EmbedFieldBuilder>() {
                     EmbedHelper.MakeField($"**{data.Forecast.Forecastday[0].Date}**",
                         $"**{data.Forecast.Forecastday[0].Day.Condition.Text.ToTitleCase()}**"
