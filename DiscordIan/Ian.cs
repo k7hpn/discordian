@@ -114,7 +114,12 @@ namespace DiscordIan
             services.AddTransient<FetchService>();
 
             // system services
-            services.AddTransient(x => new HttpClient(BuildHTTPHandler()));
+            services.AddTransient(x =>             
+                new HttpClient(BuildHTTPHandler())
+                {
+                    DefaultRequestVersion = HttpVersion.Version10
+                }
+            );
 
             return services.BuildServiceProvider();
         }
