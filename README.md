@@ -1,7 +1,7 @@
 # DiscordIan
 
 Ian is a bot for Discord written in [C#](https://docs.microsoft.com/en-us/dotnet/csharp/)
-using [.NET Core 3.1](https://dotnet.microsoft.com/download/dotnet-core/3.1) designed to run
+using [Microsoft .NET](https://dotnet.microsoft.com/) designed to run
 successfully in [Docker](https://www.docker.com) and be easy to customize/extend.
 
 # Running the bot

@@ -17,16 +17,16 @@ namespace DiscordIan.Module
     {
         private readonly IDistributedCache _cache;
         private readonly FetchService _fetchService;
-        private readonly Model.Options _options;
+        private readonly Model.BotOptions _options;
 
         public OpenWeather(IDistributedCache cache,
             FetchService fetchService,
-            IOptionsMonitor<Model.Options> optionsAccessor)
+            IOptionsMonitor<Model.BotOptions> optionsAccessor)
         {
             _cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _fetchService = fetchService
                 ?? throw new ArgumentNullException(nameof(fetchService));
-            _options = optionsAccessor.CurrentValue
+            _options = optionsAccessor?.CurrentValue
                 ?? throw new ArgumentNullException(nameof(optionsAccessor));
         }
 
@@ -98,97 +98,54 @@ namespace DiscordIan.Module
             }
         }
 
-        private async Task<(string, Discord.Embed)>
-            GetWeatherResultAsync(string coordinates, string location)
+        private string FormatResults(WeatherCurrent.Current data,
+            string location,
+            WeatherForecast.Daily foreData = null)
         {
-            var headers = new Dictionary<string, string>
+            var sb = new StringBuilder()
+                    .AppendFormat(">>> **{0}:** {1} {2}",
+                        location,
+                        TitleCase(data.Weather.Value),
+                        WeatherIcon(data.Weather.Icon))
+                    .AppendLine()
+
+                    .AppendFormat("**Temp:** {0}°{1} **Feels Like:** {2}°{3} **Humidity:** {4}{5}",
+                        data.Temperature.Value,
+                        data.Temperature.Unit.ToUpper()[0],
+                        data.Feels_like.Value,
+                        data.Feels_like.Unit.ToUpper()[0],
+                        data.Humidity.Value,
+                        data.Humidity.Unit)
+                    .AppendLine()
+
+                    .AppendFormat("**Wind:** {0} **Speed:** {1}{2} {3}",
+                        data.Wind.Speed.Name,
+                        data.Wind.Speed.Value,
+                        data.Wind.Speed.Unit,
+                        data.Wind.Direction.Code);
+
+            if (!string.IsNullOrEmpty(data.Wind.Gusts))
             {
-                { "User-Agent", "DiscorIan Discord bot" }
-            };
-
-            var uriCurrent = new Uri(string.Format(_options.IanOpenWeatherMapEndpointCoords,
-                HttpUtility.UrlEncode(coordinates.Split(",")[0]),
-                HttpUtility.UrlEncode(coordinates.Split(",")[1]),
-                _options.IanOpenWeatherKey));
-
-            var uriForecast = new Uri(string.Format(_options.IanOpenWeatherMapEndpointForecast,
-                HttpUtility.UrlEncode(coordinates.Split(",")[0]),
-                HttpUtility.UrlEncode(coordinates.Split(",")[1]),
-                _options.IanOpenWeatherKey));
-
-            var responseCurrent = await _fetchService
-                .GetAsync<WeatherCurrent.Current>(uriCurrent, headers);
-
-            if (responseCurrent.IsSuccessful)
-            {
-                string message;
-                var currentData = responseCurrent.Data;
-
-                var responseForecast = await _fetchService
-                    .GetAsync<WeatherForecast.Forecast>(uriForecast, headers);
-
-                if (responseForecast.IsSuccessful)
-                {
-                    var forecastData = responseForecast.Data;
-
-                    if (forecastData.Daily == null || forecastData.Daily.Length == 0)
-                        throw new Exception("Today doesn't exist?!");
-
-                    var today = forecastData.Daily[0];
-
-                    message = FormatResults(currentData, location, today);
-                }
-                else
-                {
-                    message = FormatResults(currentData, location);
-                }
-
-                return (message, null);
+                sb.AppendFormat(" **Gusts:** {0}{1}",
+                        data.Wind.Gusts,
+                        data.Wind.Speed.Unit);
             }
 
-            return (null, null);
-        }
-
-        private async Task<(string, Discord.Embed)> GetWeatherResultAsync(string input)
-        {
-            var headers = new Dictionary<string, string>
+            if (foreData != null)
             {
-                { "User-Agent", "DiscorIan Discord bot" }
-            };
-
-            var uri = new Uri(string.Format(_options.IanOpenWeatherMapEndpointQ,
-                HttpUtility.UrlEncode(input),
-                _options.IanOpenWeatherKey));
-
-            var response = await _fetchService
-                .GetAsync<WeatherCurrent.Current>(uri, headers);
-
-            if (response.IsSuccessful)
-            {
-                var data = response.Data;
-                var locale = string.Format("{0}, {1}", data.City.Name, data.City.Country);
-                var latlong = string.Format("{0},{1}", data.City.Coord.Lat, data.City.Coord.Lon);
-
-                await _cache.SetStringAsync(input,
-                    latlong,
-                    new DistributedCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4)
-                    });
-
-                await _cache.SetStringAsync(latlong,
-                    locale,
-                    new DistributedCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4)
-                    });
-
-                string message = FormatResults(data, locale);
-
-                return (message, null);
+                sb.AppendLine()
+                    .AppendFormat("**High:** {0}°{1} **Low:** {2}°{3}",
+                        foreData.Temp.Max.ToString(),
+                        data.Temperature.Unit.ToUpper()[0],
+                        foreData.Temp.Min.ToString(),
+                        data.Temperature.Unit.ToUpper()[0])
+                    .AppendLine()
+                    .AppendFormat("**Forecast:** {0} {1}",
+                        TitleCase(foreData.Weather[0].Description),
+                        WeatherIcon(foreData.Weather[0].Icon));
             }
 
-            return (null, null);
+            return sb.ToString().Trim();
         }
 
         private async Task<(string, string)> GeocodeAddressAsync(string location)
@@ -247,95 +204,128 @@ namespace DiscordIan.Module
             return (null, null);
         }
 
-        private string FormatResults(WeatherCurrent.Current data,
-            string location,
-            WeatherForecast.Daily foreData = null)
+        private async Task<(string, Discord.Embed)>
+                            GetWeatherResultAsync(string coordinates, string location)
         {
-            var sb = new StringBuilder()
-                    .AppendFormat(">>> **{0}:** {1} {2}",
-                        location,
-                        TitleCase(data.Weather.Value),
-                        WeatherIcon(data.Weather.Icon))
-                    .AppendLine()
-
-                    .AppendFormat("**Temp:** {0}°{1} **Feels Like:** {2}°{3} **Humidity:** {4}{5}",
-                        data.Temperature.Value,
-                        data.Temperature.Unit.ToUpper()[0],
-                        data.Feels_like.Value,
-                        data.Feels_like.Unit.ToUpper()[0],
-                        data.Humidity.Value,
-                        data.Humidity.Unit)
-                    .AppendLine()
-
-                    .AppendFormat("**Wind:** {0} **Speed:** {1}{2} {3}",
-                        data.Wind.Speed.Name,
-                        data.Wind.Speed.Value,
-                        data.Wind.Speed.Unit,
-                        data.Wind.Direction.Code);
-
-            if (!string.IsNullOrEmpty(data.Wind.Gusts))
+            var headers = new Dictionary<string, string>
             {
-                sb.AppendFormat(" **Gusts:** {0}{1}",
-                        data.Wind.Gusts,
-                        data.Wind.Speed.Unit);
+                { "User-Agent", "DiscordIan Discord bot" }
+            };
+
+            var uriCurrent = new Uri(string.Format(CultureInfo.InvariantCulture,
+                _options.IanOpenWeatherMapEndpointCoords,
+                HttpUtility.UrlEncode(coordinates.Split(",")[0]),
+                HttpUtility.UrlEncode(coordinates.Split(",")[1]),
+                _options.IanOpenWeatherKey));
+
+            var uriForecast = new Uri(string.Format(CultureInfo.InvariantCulture,
+                _options.IanOpenWeatherMapEndpointForecast,
+                HttpUtility.UrlEncode(coordinates.Split(",")[0]),
+                HttpUtility.UrlEncode(coordinates.Split(",")[1]),
+                _options.IanOpenWeatherKey));
+
+            var responseCurrent = await _fetchService
+                .GetAsync<WeatherCurrent.Current>(uriCurrent, headers);
+
+            if (responseCurrent.IsSuccessful)
+            {
+                string message;
+                var currentData = responseCurrent.Data;
+
+                var responseForecast = await _fetchService
+                    .GetAsync<WeatherForecast.Forecast>(uriForecast, headers);
+
+                if (responseForecast.IsSuccessful)
+                {
+                    var forecastData = responseForecast.Data;
+
+                    if (forecastData.Daily == null || forecastData.Daily.Length == 0)
+                        throw new Exception("Today doesn't exist?!");
+
+                    var today = forecastData.Daily[0];
+
+                    message = FormatResults(currentData, location, today);
+                }
+                else
+                {
+                    message = FormatResults(currentData, location);
+                }
+
+                return (message, null);
             }
 
-            if (foreData != null)
-            {
-                sb.AppendLine()
-                    .AppendFormat("**High:** {0}°{1} **Low:** {2}°{3}",
-                        foreData.Temp.Max.ToString(),
-                        data.Temperature.Unit.ToUpper()[0],
-                        foreData.Temp.Min.ToString(),
-                        data.Temperature.Unit.ToUpper()[0])
-                    .AppendLine()
-                    .AppendFormat("**Forecast:** {0} {1}",
-                        TitleCase(foreData.Weather[0].Description),
-                        WeatherIcon(foreData.Weather[0].Icon));
-            }
-
-            return sb.ToString().Trim();
+            return (null, null);
         }
 
-        private string TitleCase(string str)
+        private async Task<(string, Discord.Embed)> GetWeatherResultAsync(string input)
+        {
+            var headers = new Dictionary<string, string>
+            {
+                { "User-Agent", "DiscordIan Discord bot" }
+            };
+
+            var uri = new Uri(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                _options.IanOpenWeatherMapEndpointQ,
+                HttpUtility.UrlEncode(input),
+                _options.IanOpenWeatherKey));
+
+            var response = await _fetchService
+                .GetAsync<WeatherCurrent.Current>(uri, headers);
+
+            if (response.IsSuccessful)
+            {
+                var data = response.Data;
+                var locale = string.Format(CultureInfo.InvariantCulture,
+                    "{0}, {1}",
+                    data.City.Name,
+                    data.City.Country);
+                var latlong = string.Format(CultureInfo.InvariantCulture,
+                    "{0},{1}",
+                    data.City.Coord.Lat,
+                    data.City.Coord.Lon);
+
+                await _cache.SetStringAsync(input,
+                    latlong,
+                    new DistributedCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4)
+                    });
+
+                await _cache.SetStringAsync(latlong,
+                    locale,
+                    new DistributedCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4)
+                    });
+
+                string message = FormatResults(data, locale);
+
+                return (message, null);
+            }
+
+            return (null, null);
+        }
+
+        private static string TitleCase(string str)
         {
             return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str);
         }
 
-        private string WeatherIcon(string iconCode)
+        private static string WeatherIcon(string iconCode)
         {
-            switch (iconCode)
+            return iconCode switch
             {
-                case "01d":
-                    return ":sunny:";
-                case "01n":
-                    return ":first_quarter_moon_with_face:";
-                case "02d":
-                    return ":white_sun_cloud:";
-                case "02n":
-                case "03d":
-                case "03n":
-                case "04d":
-                case "04n":
-                    return ":cloud:";
-                case "09d":
-                case "09n":
-                case "10n":
-                    return ":cloud_rain:";
-                case "10d":
-                    return ":white_sun_rain_cloud:";
-                case "11d":
-                case "11n":
-                    return ":thunder_cloud_rain:";
-                case "13d":
-                case "13n":
-                    return ":snowflake:";
-                case "50d":
-                case "50n":
-                    return ":sweat_drops:";
-                default:
-                    return string.Empty;
-            }
+                "01d" => ":sunny:",
+                "01n" => ":first_quarter_moon_with_face:",
+                "02d" => ":white_sun_cloud:",
+                "02n" or "03d" or "03n" or "04d" or "04n" => ":cloud:",
+                "09d" or "09n" or "10n" => ":cloud_rain:",
+                "10d" => ":white_sun_rain_cloud:",
+                "11d" or "11n" => ":thunder_cloud_rain:",
+                "13d" or "13n" => ":snowflake:",
+                "50d" or "50n" => ":sweat_drops:",
+                _ => string.Empty,
+            };
         }
     }
 }

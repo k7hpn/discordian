@@ -7,6 +7,7 @@ using DiscordIan.Service;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 using Serilog;
 
@@ -35,7 +36,7 @@ namespace DiscordIan
 
                 services.GetRequiredService<CommandService>().Log += LogAsync;
 
-                var optionsAccessor = services.GetRequiredService<IOptionsMonitor<Model.Options>>();
+                var optionsAccessor = services.GetRequiredService<IOptionsMonitor<Model.BotOptions>>();
 
                 var token = optionsAccessor.CurrentValue.IanLoginToken;
 
@@ -96,8 +97,7 @@ namespace DiscordIan
 
             services.AddLogging();
 
-            services.Configure<Model.Options>(configuration);
-            services.AddOptions();
+            services.Configure<Model.BotOptions>(configuration.GetSection(nameof(DiscordIan)));
 
             services.AddDistributedMemoryCache();
 
@@ -110,7 +110,7 @@ namespace DiscordIan
             services.AddTransient<FetchService>();
 
             // system services
-            services.AddTransient<System.Net.Http.HttpClient>();
+            services.AddHttpClient();
 
             return services.BuildServiceProvider();
         }
