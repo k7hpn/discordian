@@ -9,10 +9,10 @@ namespace DiscordIan.Module
     public class CatFact : BaseModule
     {
         private readonly FetchService _fetchService;
-        private readonly Model.Options _options;
+        private readonly Model.BotOptions _options;
 
         public CatFact(FetchService fetchService,
-            IOptionsMonitor<Model.Options> optionsAccessor)
+            IOptionsMonitor<Model.BotOptions> optionsAccessor)
         {
             _fetchService = fetchService
                 ?? throw new ArgumentNullException(nameof(fetchService));

@@ -17,16 +17,16 @@ namespace DiscordIan.Module
     {
         private readonly IDistributedCache _cache;
         private readonly FetchService _fetchService;
-        private readonly Model.Options _options;
+        private readonly Model.BotOptions _options;
 
         public Omdb(IDistributedCache cache,
             FetchService fetchService,
-            IOptionsMonitor<Model.Options> optionsAccessor)
+            IOptionsMonitor<Model.BotOptions> optionsAccessor)
         {
             _cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _fetchService = fetchService
                 ?? throw new ArgumentNullException(nameof(fetchService));
-            _options = optionsAccessor.CurrentValue
+            _options = optionsAccessor?.CurrentValue
                 ?? throw new ArgumentNullException(nameof(optionsAccessor));
         }
 
@@ -36,7 +36,9 @@ namespace DiscordIan.Module
             [Summary("Name of movie/show")] string input)
         {
             string cachedResponse = await _cache.GetStringAsync(
-                string.Format(Key.Cache.Omdb, input.Trim()));
+                string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                    Key.CacheKey.Omdb,
+                    input?.Trim()));
             Movie omdbResponse;
 
             if (string.IsNullOrEmpty(cachedResponse))
@@ -73,40 +75,14 @@ namespace DiscordIan.Module
             }
         }
 
-        private async Task<Movie> GetMovieAsync(string input)
+        private static string ConvertDateTime(string dateString)
         {
-            var headers = new Dictionary<string, string>
+            if (DateTime.TryParse(dateString, out DateTime date))
             {
-                { "User-Agent", "DiscorIan Discord bot" }
-            };
-
-            var uri = new Uri(string.Format(_options.IanOmdbEndpoint,
-                HttpUtility.UrlEncode(input),
-                _options.IanOmdbKey));
-
-            var response = await _fetchService.GetAsync<Movie>(uri, headers);
-
-            if (response.IsSuccessful)
-            {
-                var data = response.Data;
-
-                if (data == null)
-                {
-                    throw new Exception("Invalid response data.");
-                }
-
-                await _cache.SetStringAsync(
-                    string.Format(Key.Cache.Omdb, input.Trim()),
-                    JsonSerializer.Serialize(data),
-                    new DistributedCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4)
-                    });
-
-                return data;
+                return date.ToString("MMMM dd, yyyy");
             }
 
-            return null;
+            return dateString;
         }
 
         private Embed FormatOmdbResponse(Movie response)
@@ -121,7 +97,8 @@ namespace DiscordIan.Module
 
                 foreach (var rating in response.Ratings)
                 {
-                    ratings.AppendFormat("{0}: {1}",
+                    ratings.AppendFormat(System.Globalization.CultureInfo.InvariantCulture,
+                            "{0}: {1}",
                             rating.Source.Replace("Internet Movie Database", "IMDB"),
                             rating.Value)
                         .AppendLine();
@@ -136,8 +113,9 @@ namespace DiscordIan.Module
 
             if (!string.IsNullOrEmpty(response.ImdbId))
             {
-                titleUrl = string.Format(_options.IanImdbIdUrl,
-                        response.ImdbId);
+                titleUrl = string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                    _options.IanImdbIdLink,
+                    response.ImdbId);
             }
 
             if (response.Poster.IsAbsoluteUri)
@@ -167,14 +145,43 @@ namespace DiscordIan.Module
             }.Build();
         }
 
-        private string ConvertDateTime(string dateString)
+        private async Task<Movie> GetMovieAsync(string input)
         {
-            if (DateTime.TryParse(dateString, out DateTime date))
+            var headers = new Dictionary<string, string>
             {
-                return date.ToString("MMMM dd, yyyy");
+                { "User-Agent", "DiscordIan Discord bot" }
+            };
+
+            var uri = new Uri(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                _options.IanOmdbEndpoint,
+                HttpUtility.UrlEncode(input),
+                _options.IanOmdbKey));
+
+            var response = await _fetchService.GetAsync<Movie>(uri, headers);
+
+            if (response.IsSuccessful)
+            {
+                var data = response.Data;
+
+                if (data == null)
+                {
+                    throw new Exception("Invalid response data.");
+                }
+
+                await _cache.SetStringAsync(
+                    string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                        Key.CacheKey.Omdb,
+                        input.Trim()),
+                    JsonSerializer.Serialize(data),
+                    new DistributedCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4)
+                    });
+
+                return data;
             }
 
-            return dateString;
+            return null;
         }
     }
 }

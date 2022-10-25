@@ -20,11 +20,11 @@ namespace DiscordIan.Module
 
         private readonly IDistributedCache _cache;
         private readonly FetchService _fetchService;
-        private readonly Model.Options _options;
+        private readonly Model.BotOptions _options;
 
         public UrbanDictionary(IDistributedCache cache,
             FetchService fetchService,
-            IOptionsMonitor<Model.Options> optionsAccessor)
+            IOptionsMonitor<Model.BotOptions> optionsAccessor)
         {
             _cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _fetchService = fetchService
@@ -37,123 +37,8 @@ namespace DiscordIan.Module
         {
             get
             {
-                return string.Format(Key.Cache.UrbanDictionary, Context.User.Id);
+                return string.Format(Key.CacheKey.UrbanDictionary, Context.User.Id);
             }
-        }
-
-        private string FormatDefinition(UrbanDefinition[] definitions, int index)
-        {
-            var definition = definitions[index];
-            var response = new StringBuilder(definition.Word);
-
-            if (definitions.Length > 1)
-            {
-                response.Append(" (")
-                    .Append(index + 1)
-                    .Append("/")
-                    .Append(definitions.Length)
-                    .Append(")");
-            }
-
-            if (!string.IsNullOrEmpty(definition.ThumbsUp))
-            {
-                response.Append(" \uD83D\uDC4D:")
-                    .Append(definition.ThumbsUp);
-            }
-            if (!string.IsNullOrEmpty(definition.ThumbsDown))
-            {
-                response.Append(" \uD83D\uDC4E:")
-                    .Append(definition.ThumbsDown);
-            }
-            response.Append(" ")
-                .Append(Regex.Replace(definition.Definition, @"\[(.+?)\]", "__$1__"));
-
-            return response.ToString();
-        }
-
-        private async Task<string> GetDefinition(string term)
-        {
-            try
-            {
-                var uri = new Uri(string.Format(_options.IanUrbanDictionaryEndpoint,
-                    HttpUtility.UrlEncode(term)));
-                var response = await _fetchService.GetAsync<UrbanResponse>(uri);
-
-                if (response?.IsSuccessful == true)
-                {
-                    var definitions = response.Data;
-
-                    if (definitions?.List?.Length > 0)
-                    {
-                        string[] swaps = null;
-
-                        if (!string.IsNullOrEmpty(_options.IanUrbanDictionarySwap))
-                        {
-                            if (_options.IanUrbanDictionarySwap.Contains(','))
-                            {
-                                swaps = _options.IanUrbanDictionarySwap.Split(',');
-                            }
-                            else
-                            {
-                                swaps = new string[1] { _options.IanUrbanDictionarySwap };
-                            }
-                        }
-
-                        if (definitions.List.Length >= 2
-                            && swaps?.SingleOrDefault(_ => _ == term.Trim()) != null)
-                        {
-                            var revised = new UrbanDefinition[definitions.List.Length];
-                            Array.Copy(definitions.List, 1, revised, 0, 1);
-                            Array.Copy(definitions.List, 0, revised, 1, 1);
-                            Array.Copy(definitions.List, 2, revised, 2, definitions.List.Length - 2);
-                            definitions.List = revised;
-                        }
-                        await _cache.RemoveAsync(CacheKey);
-                        await _cache.SetStringAsync(CacheKey,
-                            JsonSerializer.Serialize(new CachedDefinitions
-                            {
-                                CreatedAt = DateTime.Now,
-                                List = definitions.List
-                            }));
-                        return FormatDefinition(definitions.List, 0);
-                    }
-                    else
-                    {
-                        return $"You are making stuff up, **{term}** is not a word!";
-                    }
-                }
-                else
-                {
-                    return $"The Urban Gods are angered by your query: {response?.Message ?? "...and I don't know why."}";
-                }
-            }
-            catch (Exception ex)
-            {
-                return $"The Urban Gods have rejected your query ({ex.Message}).";
-            }
-        }
-        private async Task<string> GetCachedDefinition()
-        {
-            var cachedString = await _cache.GetStringAsync(CacheKey);
-
-            if (cachedString?.Length == 0)
-            {
-                return $"I've got nothing for you, {Context.User.Username}";
-            }
-            else
-            {
-                var cached = JsonSerializer.Deserialize<CachedDefinitions>(cachedString);
-                cached.LastViewedDefinition++;
-                if (cached.List.Length > cached.LastViewedDefinition)
-                {
-                    await _cache.RemoveAsync(CacheKey);
-                    await _cache.SetStringAsync(CacheKey,
-                        JsonSerializer.Serialize(cached));
-
-                    return FormatDefinition(cached.List, cached.LastViewedDefinition);
-                }
-            }
-            return "That's all, folks.";
         }
 
         [Command("ud", RunMode = RunMode.Async)]
@@ -191,7 +76,7 @@ namespace DiscordIan.Module
         {
             string key = user == null
                 ? CacheKey
-                : string.Format(Key.Cache.UrbanDictionary, user.Id);
+                : string.Format(Key.CacheKey.UrbanDictionary, user.Id);
 
             var cachedString = await _cache.GetStringAsync(key);
 
@@ -206,6 +91,118 @@ namespace DiscordIan.Module
             else
             {
                 await ReplyAsync("No idea.");
+            }
+        }
+
+        private string FormatDefinition(UrbanDefinition[] definitions, int index)
+        {
+            var definition = definitions[index];
+            var response = new StringBuilder(definition.Word);
+
+            if (definitions.Length > 1)
+            {
+                response.Append(" (")
+                    .Append(index + 1)
+                    .Append("/")
+                    .Append(definitions.Length)
+                    .Append(")");
+            }
+
+            if (!string.IsNullOrEmpty(definition.ThumbsUp))
+            {
+                response.Append(" \uD83D\uDC4D:")
+                    .Append(definition.ThumbsUp);
+            }
+            if (!string.IsNullOrEmpty(definition.ThumbsDown))
+            {
+                response.Append(" \uD83D\uDC4E:")
+                    .Append(definition.ThumbsDown);
+            }
+            response.Append(" ")
+                .Append(Regex.Replace(definition.Definition, @"\[(.+?)\]", "__$1__"));
+
+            return response.ToString();
+        }
+
+        private async Task<string> GetCachedDefinition()
+        {
+            var cachedString = await _cache.GetStringAsync(CacheKey);
+
+            if (cachedString?.Length == 0)
+            {
+                return $"I've got nothing for you, {Context.User.Username}";
+            }
+            else
+            {
+                var cached = JsonSerializer.Deserialize<CachedDefinitions>(cachedString);
+                cached.LastViewedDefinition++;
+                if (cached.List.Length > cached.LastViewedDefinition)
+                {
+                    await _cache.RemoveAsync(CacheKey);
+                    await _cache.SetStringAsync(CacheKey,
+                        JsonSerializer.Serialize(cached));
+
+                    return FormatDefinition(cached.List, cached.LastViewedDefinition);
+                }
+            }
+            return "That's all, folks.";
+        }
+
+        private async Task<string> GetDefinition(string term)
+        {
+            try
+            {
+                var uri = new Uri(string.Format(_options.IanUrbanDictionaryEndpoint,
+                    HttpUtility.UrlEncode(term)));
+                var response = await _fetchService.GetAsync<UrbanResponse>(uri);
+
+                if (response?.IsSuccessful == true)
+                {
+                    var definitions = response.Data;
+
+                    if (definitions?.List?.Length > 0)
+                    {
+                        string[] swaps = null;
+
+                        if (!string.IsNullOrEmpty(_options.IanUrbanDictionarySwap))
+                        {
+                            swaps = _options.IanUrbanDictionarySwap.Contains(',',
+                                    StringComparison.OrdinalIgnoreCase)
+                                ? _options.IanUrbanDictionarySwap.Split(',')
+                                : swaps = new string[1] { _options.IanUrbanDictionarySwap }; ;
+                        }
+
+                        if (definitions.List.Length >= 2
+                            && swaps?.SingleOrDefault(_ => _ == term.Trim()) != null)
+                        {
+                            var revised = new UrbanDefinition[definitions.List.Length];
+                            Array.Copy(definitions.List, 1, revised, 0, 1);
+                            Array.Copy(definitions.List, 0, revised, 1, 1);
+                            Array.Copy(definitions.List, 2, revised, 2, definitions.List.Length - 2);
+                            definitions.List = revised;
+                        }
+                        await _cache.RemoveAsync(CacheKey);
+                        await _cache.SetStringAsync(CacheKey,
+                            JsonSerializer.Serialize(new CachedDefinitions
+                            {
+                                CreatedAt = DateTime.Now,
+                                List = definitions.List
+                            }));
+                        return FormatDefinition(definitions.List, 0);
+                    }
+                    else
+                    {
+                        return $"You are making stuff up, **{term}** is not a word!";
+                    }
+                }
+                else
+                {
+                    return $"The Urban Gods are angered by your query: {response?.Message ?? "...and I don't know why."}";
+                }
+            }
+            catch (Exception ex)
+            {
+                return $"The Urban Gods have rejected your query ({ex.Message}).";
             }
         }
     }

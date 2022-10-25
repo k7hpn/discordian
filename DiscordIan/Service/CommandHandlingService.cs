@@ -20,7 +20,7 @@ namespace DiscordIan.Service
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
         private readonly ILogger<CommandHandlingService> _logger;
-        private readonly Model.Options _options;
+        private readonly Model.BotOptions _options;
 
         public CommandHandlingService(IServiceProvider services)
         {
@@ -28,7 +28,7 @@ namespace DiscordIan.Service
             _commands = services.GetRequiredService<CommandService>();
             _discord = services.GetRequiredService<DiscordSocketClient>();
             _logger = services.GetRequiredService<ILogger<CommandHandlingService>>();
-            _options = services.GetRequiredService<IOptionsMonitor<Model.Options>>().CurrentValue;
+            _options = services.GetRequiredService<IOptionsMonitor<Model.BotOptions>>().CurrentValue;
 
             // Hook CommandExecuted to handle post-command-execution logic.
             _commands.CommandExecuted += CommandExecutedAsync;

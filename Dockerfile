@@ -1,5 +1,5 @@
 # Get build image
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build-stage
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /app
 
 # Copy source
@@ -9,7 +9,7 @@ COPY . ./
 RUN dotnet publish -c Release -o "/app/publish/"
 
 # Get runtime image
-FROM mcr.microsoft.com/dotnet/core/runtime:3.1 AS publish-stage
+FROM mcr.microsoft.com/dotnet/runtime:6.0 AS publish
 WORKDIR /app
 
 # Bring in metadata via --build-arg
@@ -36,7 +36,7 @@ ENV org.opencontainers.image.created=$IMAGE_CREATED \
     org.opencontainers.image.version=$IMAGE_VERSION
 
 # Copy source
-COPY --from=build-stage "/app/publish/" .
+COPY --from=build "/app/publish/" .
 
 # Set entrypoint
 ENTRYPOINT ["dotnet", "DiscordIan.dll"]

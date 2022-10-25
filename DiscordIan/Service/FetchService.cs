@@ -17,14 +17,14 @@ namespace DiscordIan.Service
         private const string xml = "application/xml";
 
         private readonly ILogger<FetchService> _logger;
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         public FetchService(ILogger<FetchService> logger,
-            HttpClient httpClient)
+            IHttpClientFactory httpClientFactory)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-            _httpClient.Timeout = TimeSpan.FromSeconds(10);
+            _httpClientFactory = httpClientFactory 
+                ?? throw new ArgumentNullException(nameof(httpClientFactory));
         }
 
         public async Task<Response<T>> GetAsync<T>(Uri requestUri,
@@ -32,6 +32,10 @@ namespace DiscordIan.Service
         {
             var stopwatch = Stopwatch.StartNew();
             var response = new Response<T>();
+
+            using var _httpClient = _httpClientFactory.CreateClient();
+            _httpClient.Timeout = TimeSpan.FromSeconds(10);
+
             try
             {
                 if (headers?.Count > 0)
