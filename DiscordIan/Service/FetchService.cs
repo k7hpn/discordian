@@ -79,13 +79,13 @@ namespace DiscordIan.Service
             if (content?.Headers?.ContentType?.MediaType == json)
             {
                 var contentStream = await content.ReadAsStreamAsync();
-                var deserialized = JsonSerializer.DeserializeAsync<T>(
+                var deserialized = await JsonSerializer.DeserializeAsync<T>(
                     contentStream,
                     new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
-                return deserialized.Result;
+                return deserialized;
             }
 
             if (content?.Headers?.ContentType?.MediaType == xml)
