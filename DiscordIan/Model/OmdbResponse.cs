@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DiscordIan.Model.Omdb
+namespace DiscordIan.Model.OmdbResponse
 {
     public class Movie
     {

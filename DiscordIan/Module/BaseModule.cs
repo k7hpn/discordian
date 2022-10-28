@@ -10,7 +10,7 @@ namespace DiscordIan.Module
         private const string ForgetIt = "\u2026 never mind, I'm tired of typing";
         private const int MaxReplyLength = 2000;
 
-        protected virtual async Task<IUserMessage> ReplyAsync(string message = null,
+        protected override async Task<IUserMessage> ReplyAsync(string message = null,
             bool isTTS = false,
             Embed embed = null,
             RequestOptions options = null,

@@ -16,19 +16,58 @@ namespace DiscordIan.Service
         private const string json = "application/json";
         private const string xml = "application/xml";
 
-        private readonly ILogger<FetchService> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger<FetchService> _logger;
 
         public FetchService(ILogger<FetchService> logger,
             IHttpClientFactory httpClientFactory)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _httpClientFactory = httpClientFactory 
+            _httpClientFactory = httpClientFactory
                 ?? throw new ArgumentNullException(nameof(httpClientFactory));
         }
 
+        public static async Task<T> DeserializeObjectAsync<T>(HttpContent content) where T : class
+        {
+            if (content?.Headers?.ContentType?.MediaType == json)
+            {
+                var contentStream = await content.ReadAsStreamAsync();
+                try
+                {
+                    var deserialized = await JsonSerializer.DeserializeAsync<T>(
+                        contentStream,
+                        new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                    return deserialized;
+                }
+                catch (JsonException jex)
+                {
+                    throw new DiscordIanException($"Error decoding JSON: {jex.Message}", jex);
+                }
+            }
+
+            if (content?.Headers?.ContentType?.MediaType == xml)
+            {
+                var contentString = content.ReadAsStringAsync().Result;
+                using TextReader reader = new StringReader(contentString);
+                var xmlSerializer = new XmlSerializer(typeof(T));
+                try
+                {
+                    return xmlSerializer.Deserialize(reader) as T;
+                }
+                catch (InvalidOperationException ioex)
+                {
+                    throw new DiscordIanException($"Error in decoding XML: {ioex.Message}", ioex);
+                }
+            }
+
+            throw new DiscordIanException($"Unknown response type: {content?.Headers?.ContentType?.MediaType}");
+        }
+
         public async Task<Response<T>> GetAsync<T>(Uri requestUri,
-            IDictionary<string, string> headers = null) where T : class
+                    IDictionary<string, string> headers = null) where T : class
         {
             var stopwatch = Stopwatch.StartNew();
             var response = new Response<T>();
@@ -72,31 +111,6 @@ namespace DiscordIan.Service
                 response.Elapsed = stopwatch.Elapsed;
                 return response;
             }
-        }
-
-        public async Task<T> DeserializeObjectAsync<T>(HttpContent content) where T : class
-        {
-            if (content?.Headers?.ContentType?.MediaType == json)
-            {
-                var contentStream = await content.ReadAsStreamAsync();
-                var deserialized = await JsonSerializer.DeserializeAsync<T>(
-                    contentStream,
-                    new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-                return deserialized;
-            }
-
-            if (content?.Headers?.ContentType?.MediaType == xml)
-            {
-                var contentString = content.ReadAsStringAsync().Result;
-                using TextReader reader = new StringReader(contentString);
-                var xmlSerializer = new XmlSerializer(typeof(T));
-                return xmlSerializer.Deserialize(reader) as T;
-            }
-
-            throw new Exception($"Unknown response type: {content?.Headers?.ContentType?.MediaType}");
         }
     }
 }

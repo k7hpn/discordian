@@ -12,7 +12,6 @@
         public string IanOmdbKey { get; set; }
         public string IanOpenWeatherKey { get; set; }
         public string IanOpenWeatherMapEndpointCoords { get; set; }
-        public string IanOpenWeatherMapEndpointForecast { get; set; }
         public string IanOpenWeatherMapEndpointQ { get; set; }
         public string IanUrbanDictionaryEndpoint { get; set; }
         public string IanUrbanDictionarySwap { get; set; }

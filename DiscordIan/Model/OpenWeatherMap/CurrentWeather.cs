@@ -5,7 +5,7 @@ namespace DiscordIan.Model.OpenWeatherMap
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design",
         "CA1034:Nested types should not be visible",
         Justification = "XML mapping of external object")]
-    public static class WeatherCurrent
+    public static class CurrentWeather
     {
         [XmlRoot(ElementName = "city")]
         public class City

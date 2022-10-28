@@ -36,7 +36,7 @@ ENV org.opencontainers.image.created=$IMAGE_CREATED \
     org.opencontainers.image.version=$IMAGE_VERSION
 
 # Copy source
-COPY --from=build-stage "/app/publish/" .
+COPY --from=build "/app/publish/" .
 
 # Set entrypoint
 ENTRYPOINT ["dotnet", "DiscordIan.dll"]

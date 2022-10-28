@@ -16,7 +16,7 @@ namespace DiscordIan.Module
         {
             _fetchService = fetchService
                 ?? throw new ArgumentNullException(nameof(fetchService));
-            _options = optionsAccessor.CurrentValue
+            _options = optionsAccessor?.CurrentValue
                 ?? throw new ArgumentNullException(nameof(optionsAccessor));
         }
 

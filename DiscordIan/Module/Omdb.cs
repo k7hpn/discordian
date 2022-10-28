@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Web;
 using Discord;
 using Discord.Commands;
-using DiscordIan.Model.Omdb;
+using DiscordIan.Model;
+using DiscordIan.Model.OmdbResponse;
 using DiscordIan.Service;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
@@ -79,7 +81,7 @@ namespace DiscordIan.Module
         {
             if (DateTime.TryParse(dateString, out DateTime date))
             {
-                return date.ToString("MMMM dd, yyyy");
+                return date.ToString("MMMM dd, yyyy", CultureInfo.CurrentCulture);
             }
 
             return dateString;
@@ -99,7 +101,9 @@ namespace DiscordIan.Module
                 {
                     ratings.AppendFormat(System.Globalization.CultureInfo.InvariantCulture,
                             "{0}: {1}",
-                            rating.Source.Replace("Internet Movie Database", "IMDB"),
+                            rating.Source.Replace("Internet Movie Database", 
+                                "IMDB", 
+                                StringComparison.InvariantCultureIgnoreCase),
                             rating.Value)
                         .AppendLine();
                 }
@@ -165,7 +169,7 @@ namespace DiscordIan.Module
 
                 if (data == null)
                 {
-                    throw new Exception("Invalid response data.");
+                    throw new DiscordIanException("Invalid response data.");
                 }
 
                 await _cache.SetStringAsync(

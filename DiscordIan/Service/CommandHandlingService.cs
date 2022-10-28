@@ -55,7 +55,7 @@ namespace DiscordIan.Service
         public async Task MessageReceivedAsync(SocketMessage rawMessage)
         {
             // Ignore system messages, or messages from other bots
-            if (!(rawMessage is SocketUserMessage message))
+            if (rawMessage is not SocketUserMessage message)
             {
                 return;
             }
@@ -80,7 +80,7 @@ namespace DiscordIan.Service
 
             var context = new SocketCommandContext(_discord, message);
 
-            _logger.LogTrace("Received command from {Username} in message {Message}",
+            _logger.LogDebug("Received command from {Username} in message {Message}",
                 context.User.Username,
                 context.Message);
 

@@ -7,7 +7,6 @@ using DiscordIan.Service;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 using Serilog;
 
@@ -15,9 +14,8 @@ namespace DiscordIan
 {
     internal class Ian
     {
-        private const string ConfigFilename = "settings.json";
-
         public static readonly DateTime Startup = DateTime.Now;
+        private const string ConfigFilename = "settings.json";
 
         public async Task GoAsync(string[] args)
         {
@@ -56,6 +54,11 @@ namespace DiscordIan
                     await services.GetRequiredService<CommandHandlingService>().InitializeAsync();
 
                     Log.Logger.Information("Everything is kicked off, going to sleep");
+
+                    foreach(var key in Environment.GetEnvironmentVariables().Keys)
+                    {
+                        Log.Logger.Information("Environment: {Key} = {Value}", key, Environment.GetEnvironmentVariable(key.ToString()));
+                    }
                     await Task.Delay(-1);
                 }
 
@@ -72,6 +75,7 @@ namespace DiscordIan
                     Console.WriteLine($"Startup failed: {ex.Message}");
                     Console.WriteLine(ex.StackTrace);
                 }
+                throw;
             }
             finally
             {
@@ -122,18 +126,23 @@ namespace DiscordIan
                 case LogSeverity.Critical:
                     Log.Logger.Fatal(logMessage.Exception, logMessage.Message);
                     break;
+
                 case LogSeverity.Debug:
                     Log.Logger.Debug(logMessage.Exception, logMessage.Message);
                     break;
+
                 case LogSeverity.Error:
                     Log.Logger.Error(logMessage.Exception, logMessage.Message);
                     break;
+
                 case LogSeverity.Info:
                     Log.Logger.Information(logMessage.Exception, logMessage.Message);
                     break;
+
                 case LogSeverity.Verbose:
                     Log.Logger.Verbose(logMessage.Exception, logMessage.Message);
                     break;
+
                 default:
                     Log.Logger.Warning(logMessage.Exception, logMessage.Message);
                     break;

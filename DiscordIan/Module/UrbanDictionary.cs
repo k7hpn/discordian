@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -29,7 +30,7 @@ namespace DiscordIan.Module
             _cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _fetchService = fetchService
                 ?? throw new ArgumentNullException(nameof(fetchService));
-            _options = optionsAccessor.CurrentValue
+            _options = optionsAccessor?.CurrentValue
                 ?? throw new ArgumentNullException(nameof(optionsAccessor));
         }
 
@@ -103,9 +104,9 @@ namespace DiscordIan.Module
             {
                 response.Append(" (")
                     .Append(index + 1)
-                    .Append("/")
+                    .Append('/')
                     .Append(definitions.Length)
-                    .Append(")");
+                    .Append(')');
             }
 
             if (!string.IsNullOrEmpty(definition.ThumbsUp))
@@ -118,7 +119,7 @@ namespace DiscordIan.Module
                 response.Append(" \uD83D\uDC4E:")
                     .Append(definition.ThumbsDown);
             }
-            response.Append(" ")
+            response.Append(' ')
                 .Append(Regex.Replace(definition.Definition, @"\[(.+?)\]", "__$1__"));
 
             return response.ToString();
@@ -128,11 +129,7 @@ namespace DiscordIan.Module
         {
             var cachedString = await _cache.GetStringAsync(CacheKey);
 
-            if (cachedString?.Length == 0)
-            {
-                return $"I've got nothing for you, {Context.User.Username}";
-            }
-            else
+            if (cachedString?.Length > 0)
             {
                 var cached = JsonSerializer.Deserialize<CachedDefinitions>(cachedString);
                 cached.LastViewedDefinition++;
@@ -145,6 +142,10 @@ namespace DiscordIan.Module
                     return FormatDefinition(cached.List, cached.LastViewedDefinition);
                 }
             }
+            else
+            {
+                return $"I've got nothing for you, {Context.User.Username}";
+            }
             return "That's all, folks.";
         }
 
@@ -152,7 +153,8 @@ namespace DiscordIan.Module
         {
             try
             {
-                var uri = new Uri(string.Format(_options.IanUrbanDictionaryEndpoint,
+                var uri = new Uri(string.Format(CultureInfo.InvariantCulture,
+                    _options.IanUrbanDictionaryEndpoint,
                     HttpUtility.UrlEncode(term)));
                 var response = await _fetchService.GetAsync<UrbanResponse>(uri);
 

@@ -5,7 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using Discord.Commands;
-using DiscordIan.Model.MapQuest;
+using DiscordIan.Model;
+using DiscordIan.Model.MapQuestResponse;
 using DiscordIan.Model.OpenWeatherMap;
 using DiscordIan.Service;
 using Microsoft.Extensions.Caching.Distributed;
@@ -98,27 +99,29 @@ namespace DiscordIan.Module
             }
         }
 
-        private string FormatResults(WeatherCurrent.Current data,
-            string location,
-            WeatherForecast.Daily foreData = null)
+        private static string FormatResults(CurrentWeather.Current data,
+            string location)
         {
             var sb = new StringBuilder()
-                    .AppendFormat(">>> **{0}:** {1} {2}",
+                    .AppendFormat(CultureInfo.InvariantCulture,
+                        ">>> **{0}:** {1} {2}",
                         location,
                         TitleCase(data.Weather.Value),
                         WeatherIcon(data.Weather.Icon))
                     .AppendLine()
 
-                    .AppendFormat("**Temp:** {0}°{1} **Feels Like:** {2}°{3} **Humidity:** {4}{5}",
+                    .AppendFormat(CultureInfo.InvariantCulture,
+                        "**Temp:** {0}°{1} **Feels Like:** {2}°{3} **Humidity:** {4}{5}",
                         data.Temperature.Value,
-                        data.Temperature.Unit.ToUpper()[0],
+                        data.Temperature.Unit.ToUpper(CultureInfo.InvariantCulture)[0],
                         data.Feels_like.Value,
-                        data.Feels_like.Unit.ToUpper()[0],
+                        data.Feels_like.Unit.ToUpper(CultureInfo.InvariantCulture)[0],
                         data.Humidity.Value,
                         data.Humidity.Unit)
                     .AppendLine()
 
-                    .AppendFormat("**Wind:** {0} **Speed:** {1}{2} {3}",
+                    .AppendFormat(CultureInfo.InvariantCulture,
+                        "**Wind:** {0} **Speed:** {1}{2} {3}",
                         data.Wind.Speed.Name,
                         data.Wind.Speed.Value,
                         data.Wind.Speed.Unit,
@@ -126,23 +129,10 @@ namespace DiscordIan.Module
 
             if (!string.IsNullOrEmpty(data.Wind.Gusts))
             {
-                sb.AppendFormat(" **Gusts:** {0}{1}",
+                sb.AppendFormat(CultureInfo.InvariantCulture,
+                        " **Gusts:** {0}{1}",
                         data.Wind.Gusts,
                         data.Wind.Speed.Unit);
-            }
-
-            if (foreData != null)
-            {
-                sb.AppendLine()
-                    .AppendFormat("**High:** {0}°{1} **Low:** {2}°{3}",
-                        foreData.Temp.Max.ToString(),
-                        data.Temperature.Unit.ToUpper()[0],
-                        foreData.Temp.Min.ToString(),
-                        data.Temperature.Unit.ToUpper()[0])
-                    .AppendLine()
-                    .AppendFormat("**Forecast:** {0} {1}",
-                        TitleCase(foreData.Weather[0].Description),
-                        WeatherIcon(foreData.Weather[0].Icon));
             }
 
             return sb.ToString().Trim();
@@ -153,10 +143,11 @@ namespace DiscordIan.Module
             if (string.IsNullOrEmpty(_options.IanMapQuestEndpoint)
                 || string.IsNullOrEmpty(_options.IanMapQuestKey))
             {
-                throw new Exception("Geocoding is not configured.");
+                throw new DiscordIanException("Geocoding is not configured.");
             }
 
-            var uri = new Uri(string.Format(_options.IanMapQuestEndpoint,
+            var uri = new Uri(string.Format(CultureInfo.InvariantCulture,
+                _options.IanMapQuestEndpoint,
                 HttpUtility.UrlEncode(location),
                 _options.IanMapQuestKey));
 
@@ -169,7 +160,10 @@ namespace DiscordIan.Module
                     var loc = response?.Data?.Results[0]?.Locations[0];
                     string precision = loc.GeocodeQuality;
 
-                    string geocode = string.Format("{0},{1}", loc.LatLng.Lat, loc.LatLng.Lng);
+                    string geocode = string.Format(CultureInfo.InvariantCulture,
+                        "{0},{1}",
+                        loc.LatLng.Lat,
+                        loc.LatLng.Lng);
                     string locale;
 
                     if (precision == "COUNTRY")
@@ -178,19 +172,31 @@ namespace DiscordIan.Module
                     }
                     else if (precision == "STATE")
                     {
-                        locale = string.Format("{0}, {1}", loc.AdminArea3, loc.AdminArea1);
+                        locale = string.Format(CultureInfo.InvariantCulture,
+                            "{0}, {1}",
+                            loc.AdminArea3,
+                            loc.AdminArea1);
                     }
                     else if (precision == "CITY" && string.IsNullOrEmpty(loc.AdminArea3))
                     {
-                        locale = string.Format("{0}, {1}", loc.AdminArea5, loc.AdminArea1);
+                        locale = string.Format(CultureInfo.InvariantCulture,
+                            "{0}, {1}",
+                            loc.AdminArea5,
+                            loc.AdminArea1);
                     }
                     else if (string.IsNullOrEmpty(loc.AdminArea5))
                     {
-                        locale = string.Format("{0}, {1}", loc.AdminArea3, loc.AdminArea1);
+                        locale = string.Format(CultureInfo.InvariantCulture,
+                            "{0}, {1}",
+                            loc.AdminArea3,
+                            loc.AdminArea1);
                     }
                     else
                     {
-                        locale = string.Format("{0}, {1}", loc.AdminArea5, loc.AdminArea3);
+                        locale = string.Format(CultureInfo.InvariantCulture,
+                            "{0}, {1}",
+                            loc.AdminArea5,
+                            loc.AdminArea3);
                     }
 
                     return (geocode, locale);
@@ -198,7 +204,7 @@ namespace DiscordIan.Module
             }
             else
             {
-                throw new Exception(response.Message);
+                throw new DiscordIanException(response.Message);
             }
 
             return (null, null);
@@ -218,40 +224,12 @@ namespace DiscordIan.Module
                 HttpUtility.UrlEncode(coordinates.Split(",")[1]),
                 _options.IanOpenWeatherKey));
 
-            var uriForecast = new Uri(string.Format(CultureInfo.InvariantCulture,
-                _options.IanOpenWeatherMapEndpointForecast,
-                HttpUtility.UrlEncode(coordinates.Split(",")[0]),
-                HttpUtility.UrlEncode(coordinates.Split(",")[1]),
-                _options.IanOpenWeatherKey));
-
             var responseCurrent = await _fetchService
-                .GetAsync<WeatherCurrent.Current>(uriCurrent, headers);
+                .GetAsync<CurrentWeather.Current>(uriCurrent, headers);
 
             if (responseCurrent.IsSuccessful)
             {
-                string message;
-                var currentData = responseCurrent.Data;
-
-                var responseForecast = await _fetchService
-                    .GetAsync<WeatherForecast.Forecast>(uriForecast, headers);
-
-                if (responseForecast.IsSuccessful)
-                {
-                    var forecastData = responseForecast.Data;
-
-                    if (forecastData.Daily == null || forecastData.Daily.Length == 0)
-                        throw new Exception("Today doesn't exist?!");
-
-                    var today = forecastData.Daily[0];
-
-                    message = FormatResults(currentData, location, today);
-                }
-                else
-                {
-                    message = FormatResults(currentData, location);
-                }
-
-                return (message, null);
+                return (FormatResults(responseCurrent.Data, location), null);
             }
 
             return (null, null);
@@ -264,13 +242,13 @@ namespace DiscordIan.Module
                 { "User-Agent", "DiscordIan Discord bot" }
             };
 
-            var uri = new Uri(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+            var uri = new Uri(string.Format(CultureInfo.InvariantCulture,
                 _options.IanOpenWeatherMapEndpointQ,
                 HttpUtility.UrlEncode(input),
                 _options.IanOpenWeatherKey));
 
             var response = await _fetchService
-                .GetAsync<WeatherCurrent.Current>(uri, headers);
+                .GetAsync<CurrentWeather.Current>(uri, headers);
 
             if (response.IsSuccessful)
             {

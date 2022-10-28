@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DiscordIan.Model.MapQuest
+namespace DiscordIan.Model.MapQuestResponse
 {
     public class Copyright
     {
